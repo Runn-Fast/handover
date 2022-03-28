@@ -1,4 +1,4 @@
-import { fromUnixTime, format } from 'date-fns'
+import { format } from 'date-fns'
 
 import { assertNever } from '../assert.js'
 
@@ -38,7 +38,7 @@ const mapUserPostToContent = (post: UserPost): Content => {
 const mapHandoverPostToContent = (post: HandoverPost): Content => {
   const { date, title } = post
 
-  const formattedDate = format(fromUnixTime(date), 'PPPP')
+  const formattedDate = format(new Date(date), 'PPPP')
 
   const text = `*${title} Handover for ${formattedDate}*`
 

@@ -11,12 +11,12 @@ type Result = {
   profile: Profile
 }
 
-const BLACK_LIST = ['', 'Important']
+const BLACK_LIST = new Set(['', 'Important'])
 
 const forceFetchUserName =
   (web: WebClient) =>
   async (user: string): Promise<string> => {
-    if (BLACK_LIST.includes(user)) {
+    if (BLACK_LIST.has(user)) {
       return user
     }
 
