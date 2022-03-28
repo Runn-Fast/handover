@@ -10,36 +10,68 @@
 git clone https://github.com/Runn-Fast/handover
 cd handover
 
-npm install
-npm run build
-
 cat << EOF > .env
-CACHE_DIR='/tmp/handover'
-SLACK_TOKEN='xoxp-**********-************-************-********************************'
-SLACK_SIGNING_SECRET='xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
-SLACK_CHANNEL='C6JTYKM50'
-HANDOVER_CONFIG='[["The IT Crowd", "Europe/London", "0 10 * * 1-5", ["roy", "moss", "jen"]]]'
-PORT='8080'
+SLACK_APP_TOKEN=xapp-1-***********-*************-****************************************************************
+SLACK_BOT_TOKEN=xoxp-**********-************-************-********************************
+SLACK_SIGNING_SECRET=********************************
+SLACK_CHANNEL=C********
+HANDOVER_CONFIG='[{"title":"The IT Crowd", "timezone":"Europe/London", "schedule":"0 10 * * 1-5", "remindAt":"0 18 * * 1-5", "users":["roy", "moss", "jen"]}]'
 EOF
 
-npm start
+pnpm install
+pnpm run build
+pnpm start
 ```
 
-## Slack Permissions
+## Slack App Manifest
 
-- `chat:write`
-- `users.profile:read`
-- `users:read`
+```json
+{
+    "display_information": {
+        "name": "Handover Bot"
+    },
+    "features": {
+        "bot_user": {
+            "display_name": "Handover Bot",
+            "always_online": true
+        }
+    },
+    "oauth_config": {
+        "scopes": {
+            "bot": [
+                "chat:write",
+                "users:read",
+                "users.profile:read",
+                "im:history"
+            ]
+        }
+    },
+    "settings": {
+        "event_subscriptions": {
+            "bot_events": [
+                "message.im"
+            ]
+        },
+        "interactivity": {
+            "is_enabled": true
+        },
+        "org_deploy_enabled": false,
+        "socket_mode_enabled": true,
+        "token_rotation_enabled": false
+    }
+}
+```
 
 ## Environment Variables
 
 ```
-CACHE_DIR: (string) Path to a directory for where to write cache files
-SLACK_TOKEN: (string) Slack OAuth Access Token 
-SLACK_SIGNING_SECRET: (string) Slack Signing Secret
-SLACK_CHANNEL: (string) ID of the Slack channel to post the handover to
-PORT: (number, optional) The port to start the server on
-HANDOVER_CONFIG: JSON formatted string of the handover config (see below)
+CACHE_DIR: (string, optional) Path to a directory for where to write cache files. Default `/tmp/handover`
+SLACK_APP_TOKEN: (string) Slack APP Access Token. Starts with `xapp-`.
+SLACK_BOT_TOKEN: (string) Slack Bot Access Token . Starts with `xoxb-`.
+SLACK_SIGNING_SECRET: (string) Slack Signing Secret.
+SLACK_CHANNEL: (string) ID of the Slack channel to post the handover to.
+PORT: (number, optional) The port to start the server on. Default `3000`.
+HANDOVER_CONFIG: JSON formatted string of the handover config (see below).
 ```
 
 ## How It Works
@@ -49,39 +81,21 @@ HANDOVER_CONFIG: JSON formatted string of the handover config (see below)
 This config is used to automate daily posts.
 
 ```json5
-// structure
-// [[title, timezone, schedule, [users...]]]
-
 [
-  [
-    // title
-    "The IT Crowd",
+  {
+    "title": "The IT Crowd",
+    "timezone": "Europe/Timezone",
 
-    // timezone
-    "Europe/Timezone",
-
-    // schedule (see https://crontab.guru)
-    "0 10 * * 1-5",
+    // see https://crontab.guru
+    "schedule": "0 10 * * 1-5",
+    "remindAt": "0 18 * * 1-5",
 
     // list of slack usernames
-    [
+    "users": [
       "roy",
       "moss",
-      "jen",
+      "jen"
     ]
-  ]
+  }
 ]
 ```
-
-(slack)
-⮩ slack-message-received
-  ⮩ prepare-user-message
-    ⮩ user-message-created
-    ⮩ user-message-changed
-    ⮩ user-message-removed
-
-(action) 
-⮩ prepare-user-message
-  ⮩ user-message-reset 
-⮩ handover-created
-⮩ time-to-remind-user
