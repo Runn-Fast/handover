@@ -2,7 +2,7 @@
 
 > A slackbot for writing handover posts
 
-![screenshot of slack](./screenshot.png)
+![screenshot of slack](./example.png)
 
 ## Running
 
