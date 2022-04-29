@@ -1,0 +1,67 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  timeZone  String
+
+  posts Post[]
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  title     String
+  date      DateTime @db.Date
+
+  channel String?
+  ts      String?
+
+  user  User       @relation(fields: [userId], references: [id])
+  items PostItem[]
+
+  @@unique([userId, date], name: "userDate")
+  @@unique([channel, ts], name: "channelTs")
+}
+
+model PostItem {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  postId    Int
+  text      String
+
+  channel String
+  ts      String
+
+  post Post @relation(fields: [postId], references: [id])
+
+  @@unique([channel, ts], name: "channelTs")
+}
+
+model Heading {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  title     String
+  date      DateTime @unique @db.Date
+
+  channel String?
+  ts      String?
+
+  @@unique([channel, ts], name: "channelTs")
+}

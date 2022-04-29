@@ -1,46 +1,30 @@
 import Bolt from '@slack/bolt'
 import { WebClient } from '@slack/web-api'
-import pull from 'pull-stream'
-import { through as mapAsync } from 'pull-promise'
-import many from 'pull-many'
-import catchError from 'pull-catch'
-import { tap } from 'pull-tap'
+import * as dateFns from 'date-fns'
 
-import createStore from './store/index.js'
+import createUserFetcher from './fetch/create-user-fetcher.js'
 
-import createUserNameFetcher from './fetch/createUserNameFetcher.js'
-
-import createActionSource from './streams/createActionSource.js'
-import { createMessageSource } from './streams/createMessageSource.js'
-import filterMessage from './streams/filterMessage.js'
-import mapActionAddUserName from './streams/mapActionAddUserName.js'
-import mapActionToPost from './streams/mapActionToPost.js'
-import mapActionAsImportant from './streams/mapActionAsImportant.js'
-import mapActionAsDifferentUser from './streams/mapActionAsDifferentUser.js'
-import mapActionWithURL from './streams/mapActionWithURL.js'
-import mapMessageToAction from './streams/mapMessageToAction.js'
-import mapPostToContent from './streams/mapPostToContent.js'
-import publishToSlack from './streams/publishToSlack.js'
+import { listenToMessage } from './streams/listen-to-message.js'
+import { mapMessageToAction } from './streams/map-message-to-action.js'
+import { mapPostToContent } from './streams/map-post-to-content.js'
+import { publishPublicContentToSlack } from './streams/publish-to-slack.js'
 
 import {
   SLACK_BOT_TOKEN,
   SLACK_APP_TOKEN,
-  HANDOVER_CONFIG,
+  HANDOVER_CHANNEL,
+  HANDOVER_TITLE,
+  // HANDOVER_USERS,
   PORT,
   SLACK_SIGNING_SECRET,
-  CACHE_DIR,
 } from './constants.js'
 
-import { Message, Action, Post, Content } from './types.js'
-
-const { filter, map, drain, flatten } = pull
+import * as core from './core/index.js'
 
 const start = async () => {
-  const store = await createStore(CACHE_DIR)
-
   const web = new WebClient(SLACK_BOT_TOKEN)
 
-  const fetchUserName = createUserNameFetcher(web)
+  const fetchUser = createUserFetcher(web)
 
   const slackBoltApp = new Bolt.App({
     port: PORT,
@@ -59,50 +43,73 @@ const start = async () => {
     ],
   })
 
-  const sourceMessage = await createMessageSource(slackBoltApp)
+  await listenToMessage(slackBoltApp, async (message) => {
+    console.log(message)
+    const action = mapMessageToAction(message)
+    console.log(action)
 
-  const sourceActionFromConfig = await createActionSource({
-    web,
-    teams: HANDOVER_CONFIG,
+    if (action.type === 'ADD' || action.type === 'CHANGE') {
+      const user = await fetchUser(action.userId)
+      if (!user) {
+        throw new Error(`Could not find user with ID: ${action.userId}`)
+      }
+
+      await core.upsertUser({
+        id: user.id,
+        name: user.name,
+        timeZone: user.tz,
+      })
+
+      await core.addPostItem({
+        userId: action.userId,
+        channel: action.channel,
+        ts: action.ts,
+        text: action.text,
+      })
+    } else if (action.type === 'REMOVE') {
+      await core.deletePostItem({
+        channel: action.channel,
+        ts: action.ts,
+      })
+    }
+
+    const post = await core.getLatestPostWithItems({ userId: action.userId })
+    if (!post) {
+      return
+    }
+
+    const heading = await core.upsertHeading({
+      date: post.date,
+      title: `*${HANDOVER_TITLE}: ${dateFns.format(post.date, 'PPPP')}*`,
+    })
+    if (!heading.ts) {
+      const headingTs = await publishPublicContentToSlack({
+        web,
+        channel: HANDOVER_CHANNEL,
+        ts: undefined,
+        text: heading.title,
+      })
+      await core.updateHeading(heading.id, {
+        channel: HANDOVER_CHANNEL,
+        ts: headingTs,
+      })
+    }
+
+    const text = mapPostToContent(post)
+    const ts = post.ts ?? undefined
+
+    const publishedTs = await publishPublicContentToSlack({
+      web,
+      channel: HANDOVER_CHANNEL,
+      ts,
+      text,
+    })
+
+    await core.updatePost(post.id, {
+      channel: HANDOVER_CHANNEL,
+      ts: publishedTs,
+    })
   })
-
-  const sourceActionFromSlack = pull(
-    sourceMessage,
-    tap<Message>((message) => {
-      console.log('source', message)
-    }),
-    filter<Message>(filterMessage),
-    map<Message, Action>(mapMessageToAction),
-    catchError<void>((error) => {
-      console.error('Error:', error)
-    }),
-  )
-
-  pull(
-    many([sourceActionFromConfig, sourceActionFromSlack]),
-    tap<Action>(console.log.bind(console, 'action')),
-
-    mapAsync<Action, Action>(mapActionAddUserName(fetchUserName)),
-
-    mapAsync<Action, Action[]>(mapActionAsImportant),
-    flatten<Action[]>(),
-
-    mapAsync<Action, Action[]>(mapActionAsDifferentUser(fetchUserName)),
-    flatten<Action[]>(),
-
-    map<Action, Action>(mapActionWithURL),
-    tap<Action>(console.log.bind(console, 'action.mapped')),
-
-    mapAsync<Action, Post[]>(mapActionToPost(store)),
-    flatten<Post[]>(),
-    tap<Post>(console.log.bind(console, 'post')),
-
-    map<Post, Content>(mapPostToContent),
-    catchError<void>((error) => {
-      console.error('Error:', error)
-    }),
-    drain<Content>(publishToSlack(web, store)),
-  )
 
   console.info(`Listening to slack messages...`)
 }

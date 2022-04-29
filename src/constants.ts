@@ -1,35 +1,41 @@
-import dotenv from 'dotenv'
-import env from 'env-var'
+import envSchema from 'env-schema'
+import { Static, Type } from '@sinclair/typebox'
 
-import { TeamConfig } from './types.js'
+const schema = Type.Strict(
+  Type.Object({
+    SLACK_BOT_TOKEN: Type.String(),
+    SLACK_APP_TOKEN: Type.String(),
+    SLACK_SIGNING_SECRET: Type.String(),
+    PORT: Type.Integer({ default: 3000, minimum: 0, maximum: 65_535 }),
+    HANDOVER_CHANNEL: Type.String(),
+    HANDOVER_TITLE: Type.String(),
+    HANDOVER_USERS: Type.String(),
+  }),
+)
 
-dotenv.config()
+const config = envSchema<Static<typeof schema>>({
+  schema,
+  dotenv: true,
+})
 
-const SLACK_BOT_TOKEN = env.get('SLACK_BOT_TOKEN').required().asString()
-const SLACK_APP_TOKEN = env.get('SLACK_APP_TOKEN').required().asString()
+console.log(config)
 
-const SLACK_CHANNEL = env.get('SLACK_CHANNEL').required().asString()
-
-const SLACK_SIGNING_SECRET = env
-  .get('SLACK_SIGNING_SECRET')
-  .required()
-  .asString()
-
-const PORT = env.get('PORT').default('3000').required().asPortNumber()
-
-const HANDOVER_CONFIG: TeamConfig[] = env
-  .get('HANDOVER_CONFIG')
-  .required()
-  .asJsonArray()
-
-const CACHE_DIR = env.get('CACHE_DIR').default('/tmp/handover').asString()
+const {
+  SLACK_APP_TOKEN,
+  SLACK_BOT_TOKEN,
+  SLACK_SIGNING_SECRET,
+  PORT,
+  HANDOVER_CHANNEL,
+  HANDOVER_TITLE,
+  HANDOVER_USERS,
+} = config
 
 export {
-  PORT,
-  HANDOVER_CONFIG,
   SLACK_BOT_TOKEN,
   SLACK_APP_TOKEN,
-  SLACK_CHANNEL,
   SLACK_SIGNING_SECRET,
-  CACHE_DIR,
+  PORT,
+  HANDOVER_CHANNEL,
+  HANDOVER_TITLE,
+  HANDOVER_USERS,
 }
