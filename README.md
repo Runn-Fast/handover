@@ -16,8 +16,9 @@ cat << EOF > .env
 SLACK_APP_TOKEN=xapp-1-***********-*************-****************************************************************
 SLACK_BOT_TOKEN=xoxp-**********-************-************-********************************
 SLACK_SIGNING_SECRET=********************************
-SLACK_CHANNEL=C********
-HANDOVER_CONFIG='[{"title":"The IT Crowd", "timezone":"Europe/London", "schedule":"0 10 * * 1-5", "remindAt":"0 18 * * 1-5", "users":["roy", "moss", "jen"]}]'
+HANDOVER_CHANNEL=C********
+HANDOVER_TITLE=The IT Crowd Handover
+HANDOVER_USERS=roy, moss, jen
 EOF
 
 pnpm install

@@ -17,7 +17,8 @@ model User {
   name      String
   timeZone  String
 
-  posts Post[]
+  posts    Post[]
+  Reminder Reminder[]
 }
 
 model Post {
@@ -64,4 +65,21 @@ model Heading {
   ts      String?
 
   @@unique([channel, ts], name: "channelTs")
+}
+
+model Reminder {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  date      DateTime @db.Date
+  text      String
+
+  channel String?
+  ts      String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([channel, ts], name: "channelTs")
+  @@unique([userId, date], name: "userDate")
 }

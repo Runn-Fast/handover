@@ -1,6 +1,6 @@
-import { PostWithItems } from '../core/index.js'
+import { PostWithItems } from './db.js'
 
-const mapPostToContent = (post: PostWithItems): string => {
+const formatPostAsText = (post: PostWithItems): string => {
   const { title, items } = post
 
   const lines = items.flatMap((item) => {
@@ -15,10 +15,10 @@ const mapPostToContent = (post: PostWithItems): string => {
 
   const text =
     formattedLines.length === 0
-      ? `\n*${title}*\n_missing handover items_`
+      ? `\n_${title}_\n`
       : `\n*${title}*\n${formattedLines}`
 
   return text
 }
 
-export { mapPostToContent }
+export { formatPostAsText }

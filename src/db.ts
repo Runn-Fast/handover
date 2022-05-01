@@ -1,9 +1,33 @@
-import pkg, { Prisma, PostItem, User } from '@prisma/client'
-import * as dateFns from 'date-fns'
-import { default as dateFnsTz } from 'date-fns-tz'
+import pkg, { Prisma, Post, PostItem } from '@prisma/client'
 
 const { PrismaClient } = pkg
 const prisma = new PrismaClient()
+
+const getUserList = () => {
+  return prisma.user.findMany()
+}
+
+// Find users that have posted something in the last 7 days
+type GetActiveUserListOptions = {
+  activeSince: Date
+}
+const getActiveUserList = (options: GetActiveUserListOptions) => {
+  const { activeSince } = options
+  return prisma.user.findMany({
+    where: {
+      posts: {
+        some: {
+          date: {
+            gte: activeSince,
+          },
+          items: {
+            some: {},
+          },
+        },
+      },
+    },
+  })
+}
 
 const upsertUser = (user: Prisma.UserUncheckedCreateInput) => {
   return prisma.user.upsert({
@@ -51,48 +75,42 @@ const upsertPostItem = (postItem: Prisma.PostItemUncheckedCreateInput) => {
   })
 }
 
-const getUser = async (userId: string): Promise<User> => {
-  return prisma.user.findUnique({
-    where: { id: userId },
-    rejectOnNotFound: true,
+const upsertReminder = (reminder: Prisma.ReminderUncheckedCreateInput) => {
+  return prisma.reminder.upsert({
+    create: reminder,
+    update: reminder,
+    where: { userDate: { userId: reminder.userId, date: reminder.date } },
   })
 }
 
-const getDateFromTs = (ts: string, timeZone: string): string => {
-  const zonedDate = dateFnsTz.utcToZonedTime(
-    dateFns.fromUnixTime(Number.parseInt(ts)),
-    timeZone,
-  )
-  return (
-    dateFns.formatISO(zonedDate, { representation: 'date' }) + 'T00:00:00+00:00'
-  )
+const updateReminder = (
+  reminderId: number,
+  data: Prisma.ReminderUpdateInput,
+) => {
+  return prisma.reminder.update({
+    where: { id: reminderId },
+    data,
+  })
+}
+
+type AddPostOptions = {
+  userId: string
+  title: string
+  date: string
+}
+const addPost = async (options: AddPostOptions): Promise<Post> => {
+  const post = await upsertPost(options)
+  return post
 }
 
 type AddPostItemOptions = {
-  userId: string
+  postId: number
   channel: string
   ts: string
   text: string
 }
 const addPostItem = async (options: AddPostItemOptions): Promise<PostItem> => {
-  const { userId, channel, ts, text } = options
-
-  const user = await getUser(userId)
-  const date = getDateFromTs(ts, user.timeZone)
-
-  const post = await upsertPost({
-    userId,
-    title: user.name,
-    date,
-  })
-
-  const postItem = await upsertPostItem({
-    text,
-    postId: post.id,
-    channel,
-    ts,
-  })
-
+  const postItem = await upsertPostItem(options)
   return postItem
 }
 
@@ -108,13 +126,15 @@ const deletePostItem = (options: DeletePostItemOptions) => {
   })
 }
 
-const getLatestPostWithItems = (options: { userId: string }) => {
-  const { userId } = options
-  return prisma.post.findFirst({
-    where: { userId },
-    orderBy: {
-      date: 'desc',
-    },
+type GetPostWithItemsOptions = {
+  userId: string
+  date: string
+}
+
+const getPostWithItems = (options: GetPostWithItemsOptions) => {
+  const { userId, date } = options
+  return prisma.post.findUnique({
+    where: { userDate: { userId, date } },
     include: {
       items: {
         orderBy: {
@@ -125,18 +145,21 @@ const getLatestPostWithItems = (options: { userId: string }) => {
   })
 }
 
-type PostWithItems = NonNullable<
-  Awaited<ReturnType<typeof getLatestPostWithItems>>
->
+type PostWithItems = NonNullable<Awaited<ReturnType<typeof getPostWithItems>>>
 
 export {
+  getUserList,
+  getActiveUserList,
   upsertUser,
   upsertHeading,
   updateHeading,
   upsertPost,
   updatePost,
+  upsertReminder,
+  updateReminder,
+  addPost,
   addPostItem,
   deletePostItem,
-  getLatestPostWithItems,
+  getPostWithItems,
 }
 export type { PostWithItems }
