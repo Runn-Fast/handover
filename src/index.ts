@@ -165,22 +165,22 @@ const remindUsers = async (options: RemindUsersOptions) => {
         date: userDate,
       })
       if (!post || post.items.length === 0) {
-        const reminderText = await generateReminder({ name: user.name })
-
-        const reminder = await db.upsertReminder({
+        const reminder = await db.getReminder({
           userId: user.id,
           date: userDate,
-          text: reminderText,
         })
-
-        if (!reminder.ts) {
+        if (!reminder || !reminder.ts) {
+          const reminderText = await generateReminder({ name: user.name })
           const messageTs = await publishPrivateContentToSlack({
             web,
-            userId: reminder.userId,
-            text: reminder.text,
+            userId: user.id,
+            text: reminderText,
           })
-          await db.updateReminder(reminder.id, {
-            channel: reminder.userId,
+          await db.upsertReminder({
+            userId: user.id,
+            date: userDate,
+            text: reminderText,
+            channel: user.id,
             ts: messageTs,
           })
         }

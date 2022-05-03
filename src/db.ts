@@ -75,6 +75,12 @@ const upsertPostItem = (postItem: Prisma.PostItemUncheckedCreateInput) => {
   })
 }
 
+const getReminder = (reminder: { userId: string; date: string }) => {
+  return prisma.reminder.findUnique({
+    where: { userDate: { userId: reminder.userId, date: reminder.date } },
+  })
+}
+
 const upsertReminder = (reminder: Prisma.ReminderUncheckedCreateInput) => {
   return prisma.reminder.upsert({
     create: reminder,
@@ -157,6 +163,7 @@ export {
   updatePost,
   upsertReminder,
   updateReminder,
+  getReminder,
   addPost,
   addPostItem,
   deletePostItem,
