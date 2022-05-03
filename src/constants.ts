@@ -9,6 +9,7 @@ const schema = Type.Strict(
     PORT: Type.Integer({ default: 3000, minimum: 0, maximum: 65_535 }),
     HANDOVER_CHANNEL: Type.String(),
     HANDOVER_TITLE: Type.String(),
+    OPENAI_API_KEY: Type.Optional(Type.String()),
   }),
 )
 
@@ -23,3 +24,4 @@ export const SLACK_SIGNING_SECRET = config.SLACK_SIGNING_SECRET
 export const PORT = config.PORT
 export const HANDOVER_CHANNEL = config.HANDOVER_CHANNEL
 export const HANDOVER_TITLE = config.HANDOVER_TITLE
+export const OPENAI_API_KEY = config.OPENAI_API_KEY

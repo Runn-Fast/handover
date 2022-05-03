@@ -15,6 +15,7 @@ import {
   formatDateAsISODate,
   formatDateAsTime,
 } from './date-utils.js'
+import { generateReminder } from './ai.js'
 
 import {
   SLACK_BOT_TOKEN,
@@ -156,17 +157,20 @@ const remindUsers = async (options: RemindUsersOptions) => {
   for (const user of userList) {
     const userTime = formatDateAsTime({ date: now, timeZone: user.timeZone })
     const userDate = formatDateAsISODate({ date: now, timeZone: user.timeZone })
+    const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
 
-    if (userTime >= '17:00') {
+    if (userTime >= '17:00' && !isWeekend) {
       const post = await db.getPostWithItems({
         userId: user.id,
         date: userDate,
       })
       if (!post || post.items.length === 0) {
+        const reminderText = await generateReminder({ name: user.name })
+
         const reminder = await db.upsertReminder({
           userId: user.id,
           date: userDate,
-          text: 'FRIENDLY REMINDER TO WRITE YOUR HANDOVER',
+          text: reminderText,
         })
 
         if (!reminder.ts) {
