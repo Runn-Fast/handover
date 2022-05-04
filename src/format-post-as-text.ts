@@ -11,7 +11,15 @@ const formatPostAsText = (post: PostWithItems): string => {
       .filter((line) => line.length > 0)
   })
 
-  const formattedLines = lines.map((line) => `• ${line}`).join('\n')
+  const formattedLines = lines
+    .map((line) => {
+      if (line.trim().startsWith('•')) {
+        return line
+      }
+
+      return `• ${line}`
+    })
+    .join('\n')
 
   const text =
     formattedLines.length === 0
