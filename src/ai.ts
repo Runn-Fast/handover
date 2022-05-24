@@ -23,17 +23,17 @@ const generateReminder = async (
   const { name } = options
 
   const concern = pick([
-    'You are a little worried about',
-    'You are concerned about',
     'You are looking forward to hearing about',
     'You are excited to hear about',
+    `You can't wait to hear about`,
+    `You have been waiting all day to hear about`,
   ])
 
   const relation = pick([
     'your colleague',
+    'your buddy',
     'your friend',
     'your mate',
-    'your fellow human',
   ])
 
   const role = pick([
@@ -41,6 +41,7 @@ const generateReminder = async (
     'who is a software developer',
     'who works for Runn',
     'who is an amazing person',
+    'who is living their best life',
     'who is your best friend',
   ])
 
@@ -53,8 +54,9 @@ const generateReminder = async (
   const question = pick([
     'how they are going',
     'what they are up to',
-    'how they are feeling',
+    'what they have been working on',
     'how is their day going',
+    'what they would like to share with the team',
   ])
 
   const prompt = `${concern} ${relation}, ${name}, ${role}. ${action} ${question}.\n You: "`
