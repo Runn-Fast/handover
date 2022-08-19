@@ -15,19 +15,23 @@ const pick = (array: string[]): string => {
 
 type GenerateReminderOptions = {
   name: string
+  daysSinceLastPost: number
 }
 
 const generateReminder = async (
   options: GenerateReminderOptions,
 ): Promise<string> => {
-  const { name } = options
+  const { name, daysSinceLastPost } = options
 
-  const concern = pick([
-    'You are looking forward to hearing about',
-    'You are excited to hear about',
-    `You can't wait to hear about`,
-    `You have been waiting all day to hear about`,
-  ])
+  const concern =
+    daysSinceLastPost > 1
+      ? `It has been ${daysSinceLastPost} days since you last heard from`
+      : pick([
+          'You are looking forward to hearing about',
+          'You are excited to hear about',
+          `You can't wait to hear about`,
+          `You have been waiting all day to hear about`,
+        ])
 
   const relation = pick([
     'your colleague',
@@ -62,7 +66,8 @@ const generateReminder = async (
   const prompt = `${concern} ${relation}, ${name}, ${role}. ${action} ${question}.\n You: "`
   console.log(prompt)
 
-  const response = await openai.createCompletion('text-davinci-002', {
+  const response = await openai.createCompletion({
+    model: 'text-davinci-002',
     prompt,
     temperature: 1,
     max_tokens: 150,

@@ -6,16 +6,10 @@ import createUserFetcher from './create-user-fetcher.js'
 import { listenToMessage } from './listen-to-message.js'
 import { mapMessageToAction } from './map-message-to-action.js'
 import { formatPostAsText } from './format-post-as-text.js'
-import {
-  publishPublicContentToSlack,
-  publishPrivateContentToSlack,
-} from './publish-to-slack.js'
-import {
-  getDateFromTs,
-  formatDateAsISODate,
-  formatDateAsTime,
-} from './date-utils.js'
-import { generateReminder } from './ai.js'
+import { publishPublicContentToSlack } from './publish-to-slack.js'
+import { getDateFromTs } from './date-utils.js'
+
+import { checkAndRemindUsers } from './remind-user.js'
 
 import {
   SLACK_BOT_TOKEN,
@@ -145,50 +139,6 @@ const deletePostItem = async (options: DeletePostItemOptions) => {
   await updateUserPost({ web, userId, date: postDate })
 }
 
-type RemindUsersOptions = {
-  web: WebClient
-}
-const remindUsers = async (options: RemindUsersOptions) => {
-  const { web } = options
-  const now = new Date()
-  const userList = await db.getActiveUserList({
-    activeSince: dateFns.subDays(now, 7),
-  })
-  for (const user of userList) {
-    const userTime = formatDateAsTime({ date: now, timeZone: user.timeZone })
-    const userDate = formatDateAsISODate({ date: now, timeZone: user.timeZone })
-    const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
-
-    if (userTime >= '17:00' && !isWeekend) {
-      const post = await db.getPostWithItems({
-        userId: user.id,
-        date: userDate,
-      })
-      if (!post || post.items.length === 0) {
-        const reminder = await db.getReminder({
-          userId: user.id,
-          date: userDate,
-        })
-        if (!reminder || !reminder.ts) {
-          const reminderText = await generateReminder({ name: user.name })
-          const messageTs = await publishPrivateContentToSlack({
-            web,
-            userId: user.id,
-            text: reminderText,
-          })
-          await db.upsertReminder({
-            userId: user.id,
-            date: userDate,
-            text: reminderText,
-            channel: user.id,
-            ts: messageTs,
-          })
-        }
-      }
-    }
-  }
-}
-
 const start = async () => {
   const web = new WebClient(SLACK_BOT_TOKEN)
 
@@ -250,9 +200,10 @@ const start = async () => {
 
   console.info(`Listening to slack messages...`)
 
+  // Check if there are any users who need reminding to send their handover.
   setInterval(async () => {
     try {
-      await remindUsers({ web })
+      await checkAndRemindUsers({ web })
     } catch (error) {
       console.error(error)
     }

@@ -1,47 +1,32 @@
-import { Type } from '@sinclair/typebox'
-import Ajv from 'ajv'
+import * as z from 'zod'
 
-const ajv = new Ajv()
+const messageAddedSchema = z.object({
+  subtype: z.optional(z.string()),
+  channel: z.string(),
+  user: z.string(),
+  ts: z.string(),
+  text: z.string(),
+})
 
-const messageAddedSchema = Type.Strict(
-  Type.Object({
-    subtype: Type.Optional(Type.String()),
-    channel: Type.String(),
-    user: Type.String(),
-    ts: Type.String(),
-    text: Type.String(),
+const messageChangedSchema = z.object({
+  subtype: z.enum(['message_changed']),
+  channel: z.string(),
+  message: z.object({
+    user: z.string(),
+    ts: z.string(),
+    text: z.string(),
   }),
-)
+})
 
-const isValidMessageAdded = ajv.compile(messageAddedSchema)
-
-const messageChangedSchema = Type.Strict(
-  Type.Object({
-    subtype: Type.String({ const: 'message_changed' }),
-    channel: Type.String(),
-    message: Type.Object({
-      user: Type.String(),
-      ts: Type.String(),
-      text: Type.String(),
-    }),
+const messageDeletedSchema = z.object({
+  subtype: z.enum(['message_deleted']),
+  channel: z.string(),
+  previous_message: z.object({
+    user: z.string(),
+    ts: z.string(),
+    text: z.string(),
   }),
-)
-
-const isValidMessageChanged = ajv.compile(messageChangedSchema)
-
-const messageDeletedSchema = Type.Strict(
-  Type.Object({
-    subtype: Type.String({ const: 'message_deleted' }),
-    channel: Type.String(),
-    previous_message: Type.Object({
-      user: Type.String(),
-      ts: Type.String(),
-      text: Type.String(),
-    }),
-  }),
-)
-
-const isValidMessageDeleted = ajv.compile(messageDeletedSchema)
+})
 
 type Action = {
   type: 'CHANGE' | 'REMOVE' | 'ADD'
@@ -52,46 +37,51 @@ type Action = {
 }
 
 const mapMessageToAction = (message: unknown): Action => {
-  if (isValidMessageChanged(message)) {
+  const messageChanged = messageChangedSchema.safeParse(message)
+  if (messageChanged.success) {
     return {
       type: 'CHANGE',
-      userId: message.message.user,
-      channel: message.channel,
-      ts: message.message.ts,
-      text: message.message?.text,
+      userId: messageChanged.data.message.user,
+      channel: messageChanged.data.channel,
+      ts: messageChanged.data.message.ts,
+      text: messageChanged.data.message?.text,
     }
   }
 
-  if (isValidMessageDeleted(message)) {
+  const messageDeleted = messageDeletedSchema.safeParse(message)
+  if (messageDeleted.success) {
     return {
       type: 'REMOVE',
-      userId: message.previous_message.user,
-      channel: message.channel,
-      ts: message.previous_message.ts,
-      text: message.previous_message.text,
+      userId: messageDeleted.data.previous_message.user,
+      channel: messageDeleted.data.channel,
+      ts: messageDeleted.data.previous_message.ts,
+      text: messageDeleted.data.previous_message.text,
     }
   }
 
-  if (isValidMessageAdded(message)) {
+  const messageAdded = messageAddedSchema.safeParse(message)
+  if (messageAdded.success) {
     if (
-      message.subtype === 'bot_message' ||
-      message.subtype === 'reminder_add'
+      messageAdded.data.subtype === 'bot_message' ||
+      messageAdded.data.subtype === 'reminder_add'
     ) {
       throw new Error('Ignoring message from bot…')
     }
 
     return {
       type: 'ADD',
-      userId: message.user,
-      channel: message.channel,
-      ts: message.ts,
-      text: message.text,
+      userId: messageAdded.data.user,
+      channel: messageAdded.data.channel,
+      ts: messageAdded.data.ts,
+      text: messageAdded.data.text,
     }
   }
 
-  console.log(isValidMessageAdded.errors)
-  console.log(isValidMessageDeleted.errors)
-  console.log(isValidMessageChanged.errors)
+  console.warn({
+    messageAdded: messageAdded.error,
+    messageChanged: messageChanged.error,
+    messageDeleted: messageDeleted.error,
+  })
 
   throw new Error('Invalid message format')
 }

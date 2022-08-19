@@ -1,22 +1,16 @@
-import envSchema from 'env-schema'
-import { Static, Type } from '@sinclair/typebox'
+import * as z from 'zod'
 
-const schema = Type.Strict(
-  Type.Object({
-    SLACK_BOT_TOKEN: Type.String(),
-    SLACK_APP_TOKEN: Type.String(),
-    SLACK_SIGNING_SECRET: Type.String(),
-    PORT: Type.Integer({ default: 3000, minimum: 0, maximum: 65_535 }),
-    HANDOVER_CHANNEL: Type.String(),
-    HANDOVER_TITLE: Type.String(),
-    OPENAI_API_KEY: Type.Optional(Type.String()),
-  }),
-)
-
-const config = envSchema<Static<typeof schema>>({
-  schema,
-  dotenv: true,
+const schema = z.object({
+  SLACK_BOT_TOKEN: z.string(),
+  SLACK_APP_TOKEN: z.string(),
+  SLACK_SIGNING_SECRET: z.string(),
+  PORT: z.number().int().min(0).max(65_535).default(8742),
+  HANDOVER_CHANNEL: z.string(),
+  HANDOVER_TITLE: z.string(),
+  OPENAI_API_KEY: z.optional(z.string()),
 })
+
+const config = schema.parse(process.env)
 
 export const SLACK_APP_TOKEN = config.SLACK_APP_TOKEN
 export const SLACK_BOT_TOKEN = config.SLACK_BOT_TOKEN

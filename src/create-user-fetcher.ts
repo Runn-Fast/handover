@@ -1,30 +1,23 @@
 import { WebClient } from '@slack/web-api'
 import mem from 'mem'
-import { Type } from '@sinclair/typebox'
-import Ajv from 'ajv'
 import { User } from '@prisma/client'
+import * as z from 'zod'
 
 import * as db from './db.js'
 
-const ajv = new Ajv()
-
-const schema = Type.Strict(
-  Type.Object({
-    id: Type.String(),
-    name: Type.String(),
-    tz: Type.String(),
-    profile: Type.Object({
-      real_name: Type.String(),
-      real_name_normalized: Type.String(),
-      display_name: Type.String(),
-      display_name_normalized: Type.String(),
-      first_name: Type.String(),
-      last_name: Type.String(),
-    }),
+const userInfoSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  tz: z.string(),
+  profile: z.object({
+    real_name: z.string(),
+    real_name_normalized: z.string(),
+    display_name: z.string(),
+    display_name_normalized: z.string(),
+    first_name: z.string(),
+    last_name: z.string(),
   }),
-)
-
-const isValidUserInfo = ajv.compile(schema)
+})
 
 type UserFetcher = (user: string) => Promise<User>
 
@@ -33,15 +26,15 @@ const forceFetchUser =
   async (userId: string): Promise<User> => {
     console.log(`Fetching info for ID "${userId}"`)
     const result = await web.users.info({ user: userId })
-    const userInfo = result.user
-    if (!isValidUserInfo(userInfo)) {
-      throw isValidUserInfo.errors
+    const userInfo = userInfoSchema.safeParse(result.user)
+    if (!userInfo.success) {
+      throw userInfo.error
     }
 
     const user = await db.upsertUser({
-      id: userInfo.id,
-      name: userInfo.profile.display_name,
-      timeZone: userInfo.tz,
+      id: userInfo.data.id,
+      name: userInfo.data.profile.display_name,
+      timeZone: userInfo.data.tz,
     })
 
     return user

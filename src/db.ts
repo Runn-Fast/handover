@@ -26,6 +26,13 @@ const getActiveUserList = (options: GetActiveUserListOptions) => {
         },
       },
     },
+    include: {
+      posts: {
+        orderBy: {
+          date: 'asc',
+        },
+      },
+    },
   })
 }
 
@@ -169,4 +176,5 @@ export {
   deletePostItem,
   getPostWithItems,
 }
+
 export type { PostWithItems }

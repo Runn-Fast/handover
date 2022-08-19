@@ -8,7 +8,10 @@ type GetDateFromTsOptions = {
 
 const getDateFromTs = (options: GetDateFromTsOptions): string => {
   const { ts, timeZone } = options
-  const date = dateFns.fromUnixTime(Number.parseInt(ts))
+
+  // Days start at 3am, allows developers to write handover after midnight
+  const date = dateFns.addHours(dateFns.fromUnixTime(Number.parseInt(ts)), 3)
+
   const output = formatDateAsISODate({
     date,
     timeZone,
