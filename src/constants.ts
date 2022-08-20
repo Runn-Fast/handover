@@ -4,7 +4,10 @@ const schema = z.object({
   SLACK_BOT_TOKEN: z.string(),
   SLACK_APP_TOKEN: z.string(),
   SLACK_SIGNING_SECRET: z.string(),
-  PORT: z.number().int().min(0).max(65_535).default(8742),
+  PORT: z.preprocess(
+    (arg) => Number.parseInt(String(arg)),
+    z.number().int().min(0).max(65_535).default(8742),
+  ),
   HANDOVER_CHANNEL: z.string(),
   HANDOVER_TITLE: z.string(),
   OPENAI_API_KEY: z.optional(z.string()),
