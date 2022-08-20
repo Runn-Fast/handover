@@ -4,13 +4,21 @@ import { default as dateFnsTz } from 'date-fns-tz'
 type GetDateFromTsOptions = {
   ts: string
   timeZone: string
+
+  // Which hour should a new day start at?
+  // 0 = midnight
+  // 1 = 1am...
+  dayStartsAtHour: number
 }
 
 const getDateFromTs = (options: GetDateFromTsOptions): string => {
-  const { ts, timeZone } = options
+  const { ts, timeZone, dayStartsAtHour } = options
 
   // Days start at 3am, allows developers to write handover after midnight
-  const date = dateFns.addHours(dateFns.fromUnixTime(Number.parseInt(ts)), 3)
+  const date = dateFns.subHours(
+    dateFns.fromUnixTime(Number.parseInt(ts)),
+    dayStartsAtHour,
+  )
 
   const output = formatDateAsISODate({
     date,

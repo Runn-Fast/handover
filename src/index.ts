@@ -174,7 +174,11 @@ const start = async () => {
     console.log(action)
 
     const user = await fetchUser(action.userId)
-    const date = getDateFromTs({ ts: action.ts, timeZone: user.timeZone })
+    const date = getDateFromTs({
+      ts: action.ts,
+      timeZone: user.timeZone,
+      dayStartsAtHour: 3,
+    })
     console.log(user.name, date.split('T')[0])
 
     if (action.type === 'ADD' || action.type === 'CHANGE') {
