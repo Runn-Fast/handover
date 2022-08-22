@@ -29,8 +29,8 @@ const generateReminder = async (
       : pick([
           'You are looking forward to hearing about',
           'You are excited to hear about',
-          `You can't wait to hear about`,
-          `You have been waiting all day to hear about`,
+          "You can't wait to hear about",
+          'You have been waiting all day to hear about',
         ])
 
   const relation = pick([

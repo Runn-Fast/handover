@@ -1,5 +1,5 @@
 import * as dateFns from 'date-fns'
-import { default as dateFnsTz } from 'date-fns-tz'
+import dateFnsTz from 'date-fns-tz'
 
 type GetDateFromTsOptions = {
   ts: string
@@ -16,7 +16,7 @@ const getDateFromTs = (options: GetDateFromTsOptions): string => {
 
   // Days start at 3am, allows developers to write handover after midnight
   const date = dateFns.subHours(
-    dateFns.fromUnixTime(Number.parseInt(ts)),
+    dateFns.fromUnixTime(Number.parseInt(ts, 10)),
     dayStartsAtHour,
   )
 

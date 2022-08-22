@@ -3,13 +3,13 @@ import { PostWithItems } from './db.js'
 const formatPostAsText = (post: PostWithItems): string => {
   const { title, items } = post
 
-  const lines = items.flatMap((item) => {
-    return item.text
+  const lines = items.flatMap((item) =>
+    item.text
       .trim()
       .replace(/^\s*-\s*/gm, '')
       .split('\n')
-      .filter((line) => line.length > 0)
-  })
+      .filter((line) => line.length > 0),
+  )
 
   const formattedLines = lines
     .map((line) => {

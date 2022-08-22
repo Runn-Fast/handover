@@ -1,3 +1,4 @@
+import process from 'node:process'
 import * as z from 'zod'
 
 const schema = z.object({
@@ -5,7 +6,7 @@ const schema = z.object({
   SLACK_APP_TOKEN: z.string(),
   SLACK_SIGNING_SECRET: z.string(),
   PORT: z.preprocess(
-    (arg) => Number.parseInt(String(arg)),
+    (arg) => Number.parseInt(String(arg), 10),
     z.number().int().min(0).max(65_535).default(8742),
   ),
   HANDOVER_CHANNEL: z.string(),

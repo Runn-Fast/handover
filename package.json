@@ -60,6 +60,7 @@
     "semicolon": false,
     "prettier": true,
     "rules": {
+      "@typescript-eslint/naming-convention": "off",
       "ava/assertion-arguments": "off",
       "ava/no-ignored-test-files": [
         "error",

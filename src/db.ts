@@ -3,9 +3,7 @@ import pkg, { Prisma, Post, PostItem } from '@prisma/client'
 const { PrismaClient } = pkg
 const prisma = new PrismaClient()
 
-const getUserList = () => {
-  return prisma.user.findMany()
-}
+const getUserList = () => prisma.user.findMany()
 
 // Find users that have posted something in the last 7 days
 type GetActiveUserListOptions = {
@@ -36,75 +34,63 @@ const getActiveUserList = (options: GetActiveUserListOptions) => {
   })
 }
 
-const upsertUser = (user: Prisma.UserUncheckedCreateInput) => {
-  return prisma.user.upsert({
+const upsertUser = (user: Prisma.UserUncheckedCreateInput) =>
+  prisma.user.upsert({
     create: user,
     update: user,
     where: { id: user.id },
   })
-}
 
-const upsertHeading = (heading: Prisma.HeadingUncheckedCreateInput) => {
-  return prisma.heading.upsert({
+const upsertHeading = (heading: Prisma.HeadingUncheckedCreateInput) =>
+  prisma.heading.upsert({
     create: heading,
     update: heading,
     where: { date: heading.date },
   })
-}
 
-const updateHeading = (headingId: number, data: Prisma.HeadingUpdateInput) => {
-  return prisma.heading.update({
+const updateHeading = (headingId: number, data: Prisma.HeadingUpdateInput) =>
+  prisma.heading.update({
     where: { id: headingId },
     data,
   })
-}
 
-const upsertPost = (post: Prisma.PostUncheckedCreateInput) => {
-  return prisma.post.upsert({
+const upsertPost = (post: Prisma.PostUncheckedCreateInput) =>
+  prisma.post.upsert({
     create: post,
     update: post,
     where: { userDate: { userId: post.userId, date: post.date } },
   })
-}
 
-const updatePost = (postId: number, data: Prisma.PostUpdateInput) => {
-  return prisma.post.update({
+const updatePost = (postId: number, data: Prisma.PostUpdateInput) =>
+  prisma.post.update({
     where: { id: postId },
     data,
   })
-}
 
-const upsertPostItem = (postItem: Prisma.PostItemUncheckedCreateInput) => {
-  return prisma.postItem.upsert({
+const upsertPostItem = (postItem: Prisma.PostItemUncheckedCreateInput) =>
+  prisma.postItem.upsert({
     create: postItem,
     update: postItem,
     where: { channelTs: { channel: postItem.channel, ts: postItem.ts } },
   })
-}
 
-const getReminder = (reminder: { userId: string; date: string }) => {
-  return prisma.reminder.findUnique({
+const getReminder = (reminder: { userId: string; date: string }) =>
+  prisma.reminder.findUnique({
     where: { userDate: { userId: reminder.userId, date: reminder.date } },
   })
-}
 
-const upsertReminder = (reminder: Prisma.ReminderUncheckedCreateInput) => {
-  return prisma.reminder.upsert({
+const upsertReminder = (reminder: Prisma.ReminderUncheckedCreateInput) =>
+  prisma.reminder.upsert({
     create: reminder,
     update: reminder,
     where: { userDate: { userId: reminder.userId, date: reminder.date } },
   })
-}
 
-const updateReminder = (
-  reminderId: number,
-  data: Prisma.ReminderUpdateInput,
-) => {
-  return prisma.reminder.update({
+const updateReminder = (reminderId: number, data: Prisma.ReminderUpdateInput) =>
+  prisma.reminder.update({
     where: { id: reminderId },
     data,
   })
-}
 
 type AddPostOptions = {
   userId: string

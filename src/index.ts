@@ -52,14 +52,17 @@ const addHeading = async (options: AddHeadingOptions) => {
     const userList = await db.getActiveUserList({
       activeSince: dateFns.subDays(dateFns.parseISO(date), 7),
     })
-    for (const user of userList) {
-      await db.addPost({
-        userId: user.id,
-        title: user.name,
-        date,
-      })
-      await updateUserPost({ web, userId: user.id, date })
-    }
+
+    await Promise.all(
+      userList.map(async (user) => {
+        await db.addPost({
+          userId: user.id,
+          title: user.name,
+          date,
+        })
+        await updateUserPost({ web, userId: user.id, date })
+      }),
+    )
   }
 }
 
@@ -144,12 +147,12 @@ const start = async () => {
 
   const fetchUser = createUserFetcher(web)
 
-  {
-    const userList = await db.getUserList()
-    for (const user of userList) {
+  const userList = await db.getUserList()
+  await Promise.all(
+    userList.map(async (user) => {
       await fetchUser(user.id)
-    }
-  }
+    }),
+  )
 
   const slackBoltApp = new Bolt.App({
     port: PORT,
@@ -161,8 +164,8 @@ const start = async () => {
       {
         path: '/',
         method: ['GET'],
-        handler(_request, res) {
-          res.end('BEEP BOOP. I AM HANDOVER BOT.')
+        handler(_request, response) {
+          response.end('BEEP BOOP. I AM HANDOVER BOT.')
         },
       },
     ],
@@ -202,13 +205,13 @@ const start = async () => {
     }
   })
 
-  console.info(`Listening to slack messages...`)
+  console.info('Listening to slack messages...')
 
   // Check if there are any users who need reminding to send their handover.
   setInterval(async () => {
     try {
       await checkAndRemindUsers({ web })
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error)
     }
   }, 60 * 1000)

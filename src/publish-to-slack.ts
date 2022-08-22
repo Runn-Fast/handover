@@ -27,7 +27,7 @@ const publishPublicContentToSlack = async (
       text,
     })
     return ts
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(error)
     if ((error as WebAPIPlatformError)?.data?.error === 'message_not_found') {
       return publishPublicContentToSlack({ web, channel, text, ts: undefined })

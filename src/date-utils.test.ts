@@ -2,9 +2,7 @@ import test from 'ava'
 
 import { getDateFromTs } from './date-utils.js'
 
-const formatTs = (date: Date): string => {
-  return (date.getTime() / 1000).toString()
-}
+const formatTs = (date: Date): string => (date.getTime() / 1000).toString()
 
 test('getDateFromTs: dayStartsAtHour=3, 9pm -> same day', (t) => {
   const dateString = getDateFromTs({

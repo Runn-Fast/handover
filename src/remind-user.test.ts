@@ -4,6 +4,19 @@ import { WebClient } from '@slack/web-api'
 
 const web = 'web-client' as unknown as WebClient
 
+test('getLatestPost', async (t) => {
+  const { getLatestPost } = await import('./remind-user.js')
+
+  const lastPost = getLatestPost([
+    { date: new Date('2020-01-01') },
+    { date: new Date('2020-01-02') },
+    { date: new Date('2020-01-03') },
+    { date: new Date('2020-01-04') },
+  ])
+
+  t.deepEqual(lastPost, { date: new Date('2020-01-04') })
+})
+
 test('sendReminderToUser', async (t) => {
   const { upsertReminder } = await td.replaceEsm('./db.js')
   const { publishPrivateContentToSlack } = await td.replaceEsm(
