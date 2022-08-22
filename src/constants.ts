@@ -11,6 +11,10 @@ const schema = z.object({
   ),
   HANDOVER_CHANNEL: z.string(),
   HANDOVER_TITLE: z.string(),
+  HANDOVER_DAILY_REMINDER_TIME: z
+    .string()
+    .regex(/\d\d:\d\d/)
+    .default('17:00'),
   OPENAI_API_KEY: z.optional(z.string()),
 })
 
@@ -22,4 +26,5 @@ export const SLACK_SIGNING_SECRET = config.SLACK_SIGNING_SECRET
 export const PORT = config.PORT
 export const HANDOVER_CHANNEL = config.HANDOVER_CHANNEL
 export const HANDOVER_TITLE = config.HANDOVER_TITLE
+export const HANDOVER_DAILY_REMINDER_TIME = config.HANDOVER_DAILY_REMINDER_TIME
 export const OPENAI_API_KEY = config.OPENAI_API_KEY

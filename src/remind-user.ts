@@ -6,6 +6,7 @@ import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { formatDateAsISODate, formatDateAsTime } from './date-utils.js'
 import { generateReminder } from './ai.js'
 import * as db from './db.js'
+import { HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
 
 const DAYS_SINCE_LAST_POST_CUT_OFF = 7
 
@@ -88,7 +89,7 @@ const checkAndRemindUsers = async (options: CheckAndRemindUsersOptions) => {
       })
       const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
 
-      if (userTime >= '14:00' && !isWeekend) {
+      if (userTime >= HANDOVER_DAILY_REMINDER_TIME && !isWeekend) {
         const post = await db.getPostWithItems({
           userId: user.id,
           date: userDate,
