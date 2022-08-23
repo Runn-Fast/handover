@@ -89,11 +89,27 @@ const checkAndRemindUsers = async (options: CheckAndRemindUsersOptions) => {
       })
       const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
 
+      console.log('checkAndRemindUsers', {
+        userId: user.id,
+        userName: user.name,
+        userTimeZone: user.timeZone,
+        userTime,
+        userDate,
+        HANDOVER_DAILY_REMINDER_TIME,
+        isTimeToRemind: userTime >= HANDOVER_DAILY_REMINDER_TIME,
+      })
+
       if (userTime >= HANDOVER_DAILY_REMINDER_TIME && !isWeekend) {
         const post = await db.getPostWithItems({
           userId: user.id,
           date: userDate,
         })
+
+        console.log({
+          userId: user.id,
+          userHasPosts: !post || post.items.length === 0,
+        })
+
         if (!post || post.items.length === 0) {
           const reminder = await db.getReminder({
             userId: user.id,
