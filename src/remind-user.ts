@@ -2,9 +2,9 @@ import { WebClient } from '@slack/web-api'
 import * as dateFns from 'date-fns'
 import { User, Post } from '@prisma/client'
 
-import { publishPrivateContentToSlack } from './publish-to-slack.js'
+// Import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { formatDateAsISODate, formatDateAsTime } from './date-utils.js'
-import { generateReminder } from './ai.js'
+// Import { generateReminder } from './ai.js'
 import * as db from './db.js'
 import { HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
 
@@ -31,43 +31,49 @@ type SendReminderToUserOptions = {
 }
 
 const sendReminderToUser = async (options: SendReminderToUserOptions) => {
-  const { web, user, userDate } = options
+  const { user, userDate } = options
 
-  const dateOfLastPostUTC = getLatestPost(user.posts)?.date
-
-  const daysSinceLastPost = dateOfLastPostUTC
-    ? dateFns.differenceInDays(
-        dateFns.parseISO(userDate),
-        dateFns.parseISO(
-          formatDateAsISODate({
-            date: dateOfLastPostUTC,
-            timeZone: user.timeZone,
-          }),
-        ),
-      )
-    : Number.POSITIVE_INFINITY
-
-  let reminderText = await generateReminder({
-    name: user.name,
-    daysSinceLastPost,
+  console.log('Sending reminder to user', {
+    user,
+    userDate,
   })
 
-  if (daysSinceLastPost >= DAYS_SINCE_LAST_POST_CUT_OFF) {
-    reminderText += `\n_It has been ${daysSinceLastPost} days since your last handover post. If you do not post a handover today this will be the last reminder you receive._`
-  }
+  // Const dateOfLastPostUTC = getLatestPost(user.posts)?.date
 
-  const messageTs = await publishPrivateContentToSlack({
-    web,
-    userId: user.id,
-    text: reminderText,
-  })
-  await db.upsertReminder({
-    userId: user.id,
-    date: userDate,
-    text: reminderText,
-    channel: user.id,
-    ts: messageTs,
-  })
+  // const daysSinceLastPost = dateOfLastPostUTC
+  //   ? dateFns.differenceInDays(
+  //       dateFns.parseISO(userDate),
+  //       dateFns.parseISO(
+  //         formatDateAsISODate({
+  //           date: dateOfLastPostUTC,
+  //           timeZone: user.timeZone,
+  //         }),
+  //       ),
+  //     )
+  //   : Number.POSITIVE_INFINITY
+
+  // let reminderText = await generateReminder({
+  //   name: user.name,
+  //   daysSinceLastPost,
+  // })
+
+  // if (daysSinceLastPost >= DAYS_SINCE_LAST_POST_CUT_OFF) {
+  //   reminderText += `\n_It has been ${daysSinceLastPost} days since your last handover post. If you do not post a handover today this will be the last reminder you receive._`
+  // }
+
+  // const messageTs = await publishPrivateContentToSlack({
+  //   web,
+  //   userId: user.id,
+  //   text: reminderText,
+  // })
+
+  // await db.upsertReminder({
+  //   userId: user.id,
+  //   date: userDate,
+  //   text: reminderText,
+  //   channel: user.id,
+  //   ts: messageTs,
+  // })
 }
 
 type CheckAndRemindUsersOptions = {
@@ -105,9 +111,11 @@ const checkAndRemindUsers = async (options: CheckAndRemindUsersOptions) => {
           date: userDate,
         })
 
-        console.log({
+        console.log('getPostWithItems', {
           userId: user.id,
-          userHasPosts: !post || post.items.length === 0,
+          date: userDate,
+          post,
+          userhasNoPosts: !post || post.items.length === 0,
         })
 
         if (!post || post.items.length === 0) {
@@ -115,6 +123,13 @@ const checkAndRemindUsers = async (options: CheckAndRemindUsersOptions) => {
             userId: user.id,
             date: userDate,
           })
+
+          console.log('getReminder', {
+            userId: user.id,
+            date: userDate,
+            reminder,
+          })
+
           if (!reminder || !reminder.ts) {
             await sendReminderToUser({
               web,
