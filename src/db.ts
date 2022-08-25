@@ -1,27 +1,7 @@
 import pkg, { Prisma, Post, PostItem } from '@prisma/client'
 
 const { PrismaClient } = pkg
-const prisma = new PrismaClient({
-  log: [
-    { emit: 'event', level: 'query' },
-    { emit: 'event', level: 'error' },
-    { emit: 'event', level: 'info' },
-    { emit: 'event', level: 'warn' },
-  ],
-})
-
-prisma.$on('query', (e) => {
-  console.debug(e)
-})
-prisma.$on('warn', (e) => {
-  console.warn(e)
-})
-prisma.$on('info', (e) => {
-  console.info(e)
-})
-prisma.$on('error', (e) => {
-  console.error(e)
-})
+const prisma = new PrismaClient()
 
 const getUserList = () => prisma.user.findMany()
 
@@ -94,10 +74,13 @@ const upsertPostItem = (postItem: Prisma.PostItemUncheckedCreateInput) =>
     where: { channelTs: { channel: postItem.channel, ts: postItem.ts } },
   })
 
-const getReminder = (reminder: { userId: string; date: string }) =>
-  prisma.reminder.findUnique({
-    where: { userDate: { userId: reminder.userId, date: reminder.date } },
+const getReminder = (reminder: { userId: string; date: string }) => {
+  return prisma.reminder.findUnique({
+    where: {
+      userDate: { userId: reminder.userId, date: new Date(reminder.date) },
+    },
   })
+}
 
 const upsertReminder = (reminder: Prisma.ReminderUncheckedCreateInput) =>
   prisma.reminder.upsert({
@@ -153,7 +136,7 @@ type GetPostWithItemsOptions = {
 const getPostWithItems = (options: GetPostWithItemsOptions) => {
   const { userId, date } = options
   return prisma.post.findUnique({
-    where: { userDate: { userId, date } },
+    where: { userDate: { userId, date: new Date(date) } },
     include: {
       items: {
         orderBy: {

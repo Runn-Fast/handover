@@ -2,9 +2,9 @@ import { WebClient } from '@slack/web-api'
 import * as dateFns from 'date-fns'
 import { User, Post } from '@prisma/client'
 
-// Import { publishPrivateContentToSlack } from './publish-to-slack.js'
+import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { formatDateAsISODate, formatDateAsTime } from './date-utils.js'
-// Import { generateReminder } from './ai.js'
+import { generateReminder } from './ai.js'
 import * as db from './db.js'
 import { HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
 
@@ -31,49 +31,44 @@ type SendReminderToUserOptions = {
 }
 
 const sendReminderToUser = async (options: SendReminderToUserOptions) => {
-  const { user, userDate } = options
+  const { web, user, userDate } = options
 
-  console.log('Sending reminder to user', {
-    user,
-    userDate,
+  const dateOfLastPostUTC = getLatestPost(user.posts)?.date
+
+  const daysSinceLastPost = dateOfLastPostUTC
+    ? dateFns.differenceInDays(
+        dateFns.parseISO(userDate),
+        dateFns.parseISO(
+          formatDateAsISODate({
+            date: dateOfLastPostUTC,
+            timeZone: user.timeZone,
+          }),
+        ),
+      )
+    : Number.POSITIVE_INFINITY
+
+  let reminderText = await generateReminder({
+    name: user.name,
+    daysSinceLastPost,
   })
 
-  // Const dateOfLastPostUTC = getLatestPost(user.posts)?.date
+  if (daysSinceLastPost >= DAYS_SINCE_LAST_POST_CUT_OFF) {
+    reminderText += `\n_It has been ${daysSinceLastPost} days since your last handover post. If you do not post a handover today this will be the last reminder you receive._`
+  }
 
-  // const daysSinceLastPost = dateOfLastPostUTC
-  //   ? dateFns.differenceInDays(
-  //       dateFns.parseISO(userDate),
-  //       dateFns.parseISO(
-  //         formatDateAsISODate({
-  //           date: dateOfLastPostUTC,
-  //           timeZone: user.timeZone,
-  //         }),
-  //       ),
-  //     )
-  //   : Number.POSITIVE_INFINITY
+  const messageTs = await publishPrivateContentToSlack({
+    web,
+    userId: user.id,
+    text: reminderText,
+  })
 
-  // let reminderText = await generateReminder({
-  //   name: user.name,
-  //   daysSinceLastPost,
-  // })
-
-  // if (daysSinceLastPost >= DAYS_SINCE_LAST_POST_CUT_OFF) {
-  //   reminderText += `\n_It has been ${daysSinceLastPost} days since your last handover post. If you do not post a handover today this will be the last reminder you receive._`
-  // }
-
-  // const messageTs = await publishPrivateContentToSlack({
-  //   web,
-  //   userId: user.id,
-  //   text: reminderText,
-  // })
-
-  // await db.upsertReminder({
-  //   userId: user.id,
-  //   date: userDate,
-  //   text: reminderText,
-  //   channel: user.id,
-  //   ts: messageTs,
-  // })
+  await db.upsertReminder({
+    userId: user.id,
+    date: userDate,
+    text: reminderText,
+    channel: user.id,
+    ts: messageTs,
+  })
 }
 
 type CheckAndRemindUsersOptions = {
@@ -95,39 +90,16 @@ const checkAndRemindUsers = async (options: CheckAndRemindUsersOptions) => {
       })
       const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
 
-      console.log('checkAndRemindUsers', {
-        userId: user.id,
-        userName: user.name,
-        userTimeZone: user.timeZone,
-        userTime,
-        userDate,
-        HANDOVER_DAILY_REMINDER_TIME,
-        isTimeToRemind: userTime >= HANDOVER_DAILY_REMINDER_TIME,
-      })
-
       if (userTime >= HANDOVER_DAILY_REMINDER_TIME && !isWeekend) {
         const post = await db.getPostWithItems({
           userId: user.id,
           date: userDate,
         })
 
-        console.log('getPostWithItems', {
-          userId: user.id,
-          date: userDate,
-          post,
-          userhasNoPosts: !post || post.items.length === 0,
-        })
-
         if (!post || post.items.length === 0) {
           const reminder = await db.getReminder({
             userId: user.id,
             date: userDate,
-          })
-
-          console.log('getReminder', {
-            userId: user.id,
-            date: userDate,
-            reminder,
           })
 
           if (!reminder || !reminder.ts) {
