@@ -16,6 +16,7 @@ const publishPublicContentToSlack = async (
     const result = await web.chat.postMessage({
       channel,
       text,
+      unfurl_links: false,
     })
     return result.ts!
   }
@@ -51,6 +52,7 @@ const publishPrivateContentToSlack = async (
   const message = await web.chat.postMessage({
     channel: userId,
     text,
+    unfurl_links: false,
   })
 
   return message.ts!
