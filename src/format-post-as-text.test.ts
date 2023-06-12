@@ -1,7 +1,6 @@
-import test from 'ava'
-import { PostItem } from '@prisma/client'
-
-import { PostWithItems } from './db.js'
+import { test, expect } from 'vitest'
+import type { PostItem } from '@prisma/client'
+import type { PostWithItems } from './db.js'
 import { formatPostAsText } from './format-post-as-text.js'
 
 const post = (title: string, items: PostItem[]): PostWithItems => ({
@@ -26,7 +25,7 @@ const item = (text: string): PostItem => ({
   ts: 'ts',
 })
 
-test('with multiple items', (t) => {
+test('with multiple items', () => {
   const text = formatPostAsText(
     post('Title', [
       item('this is item 1'),
@@ -35,9 +34,7 @@ test('with multiple items', (t) => {
     ]),
   )
 
-  t.is(
-    text,
-    `
+  expect(text).toEqual(`
 *Title*
 • this is item 1
 • this is item 2
@@ -45,7 +42,7 @@ test('with multiple items', (t) => {
   )
 })
 
-test('with multiple lines in a single item', (t) => {
+test('with multiple lines in a single item', () => {
   const text = formatPostAsText(
     post('Title', [
       item(`this is item 1
@@ -54,9 +51,7 @@ this is item 3`),
     ]),
   )
 
-  t.is(
-    text,
-    `
+  expect(text).toEqual(`
 *Title*
 • this is item 1
 • this is item 2
@@ -64,7 +59,7 @@ this is item 3`),
   )
 })
 
-test('with existing bullet points', (t) => {
+test('with existing bullet points', () => {
   const text = formatPostAsText(
     post('Title', [
       item(`• this is item 1
@@ -73,9 +68,7 @@ test('with existing bullet points', (t) => {
     ]),
   )
 
-  t.is(
-    text,
-    `
+  expect(text).toEqual(`
 *Title*
 • this is item 1
 • this is item 2

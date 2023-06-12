@@ -1,15 +1,15 @@
-import pkg, { Prisma, Post, PostItem } from '@prisma/client'
+import pkg, { type Prisma, type Post, type PostItem } from '@prisma/client'
 
 const { PrismaClient } = pkg
 const prisma = new PrismaClient()
 
-const getUserList = () => prisma.user.findMany()
+const getUserList = async () => prisma.user.findMany()
 
 // Find users that have posted something in the last 7 days
 type GetActiveUserListOptions = {
   activeSince: Date
 }
-const getActiveUserList = (options: GetActiveUserListOptions) => {
+const getActiveUserList = async (options: GetActiveUserListOptions) => {
   const { activeSince } = options
   return prisma.user.findMany({
     where: {

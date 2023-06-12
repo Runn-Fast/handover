@@ -1,16 +1,13 @@
 import Bolt from '@slack/bolt'
 import { WebClient } from '@slack/web-api'
 import * as dateFns from 'date-fns'
-
 import createUserFetcher from './create-user-fetcher.js'
 import { listenToMessage } from './listen-to-message.js'
 import { mapMessageToAction } from './map-message-to-action.js'
 import { formatPostAsText } from './format-post-as-text.js'
 import { publishPublicContentToSlack } from './publish-to-slack.js'
 import { getDateFromTs } from './date-utils.js'
-
 import { checkAndRemindUsers } from './remind-user.js'
-
 import {
   SLACK_BOT_TOKEN,
   SLACK_APP_TOKEN,
@@ -19,7 +16,6 @@ import {
   PORT,
   SLACK_SIGNING_SECRET,
 } from './constants.js'
-
 import * as db from './db.js'
 
 type AddHeadingOptions = {
@@ -217,4 +213,8 @@ const start = async () => {
   }, 60 * 1000)
 }
 
-start().catch(console.error)
+try {
+  await start()
+} catch (error) {
+  console.error(error)
+}

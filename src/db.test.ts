@@ -1,9 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import test from 'ava'
-
+import { test, expect } from 'vitest'
 import * as db from './db.js'
 
-test('getReminder: should support query batching', async (t) => {
+test('getReminder: should support query batching', async () => {
   const userId = randomUUID()
   const date = '2022-08-15T00:00:00+00:00'
 
@@ -16,11 +15,11 @@ test('getReminder: should support query batching', async (t) => {
     db.getReminder({ userId, date }),
   ])
 
-  t.is(reminderList[0]?.id, reminder.id)
-  t.is(reminderList[1]?.id, reminder.id)
+  expect(reminderList[0]?.id).toEqual(reminder.id)
+  expect(reminderList[1]?.id).toEqual(reminder.id)
 })
 
-test('getPostWithItems: should support query batching', async (t) => {
+test('getPostWithItems: should support query batching', async () => {
   const userId = randomUUID()
   const date = '2022-08-15T00:00:00+00:00'
 
@@ -39,6 +38,6 @@ test('getPostWithItems: should support query batching', async (t) => {
     db.getPostWithItems({ userId, date }),
   ])
 
-  t.is(postList[0]?.id, post.id)
-  t.is(postList[1]?.id, post.id)
+  expect(postList[0]?.id).toEqual(post.id)
+  expect(postList[1]?.id).toEqual(post.id)
 })

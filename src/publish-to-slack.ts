@@ -1,4 +1,4 @@
-import { WebClient, WebAPIPlatformError } from '@slack/web-api'
+import { type WebClient, type WebAPIPlatformError } from '@slack/web-api'
 
 type PublishPublicContentToSlackOptions = {
   web: WebClient

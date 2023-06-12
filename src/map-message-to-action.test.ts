@@ -1,8 +1,7 @@
-import test from 'ava'
-
+import { test, expect } from 'vitest'
 import { mapMessageToAction } from './map-message-to-action.js'
 
-test('should handle message_changed', (t) => {
+test('should handle message_changed', () => {
   const message = {
     subtype: 'message_changed',
     ts: 'root_ts',
@@ -22,7 +21,7 @@ test('should handle message_changed', (t) => {
 
   const action = mapMessageToAction(message)
 
-  t.deepEqual(action, {
+  expect(action).toEqual({
     type: 'CHANGE',
     userId: 'message_user',
     channel: 'root_channel',
@@ -31,7 +30,7 @@ test('should handle message_changed', (t) => {
   })
 })
 
-test('should handle message_deleted', (t) => {
+test('should handle message_deleted', () => {
   const message = {
     subtype: 'message_deleted',
     ts: 'root_ts',
@@ -46,7 +45,7 @@ test('should handle message_deleted', (t) => {
 
   const action = mapMessageToAction(message)
 
-  t.deepEqual(action, {
+  expect(action).toEqual({
     type: 'REMOVE',
     userId: 'message_user',
     channel: 'root_channel',
@@ -55,7 +54,7 @@ test('should handle message_deleted', (t) => {
   })
 })
 
-test('should handle regular message', (t) => {
+test('should handle regular message', () => {
   const message = {
     subtype: 'message',
     ts: 'root_ts',
@@ -66,7 +65,7 @@ test('should handle regular message', (t) => {
 
   const action = mapMessageToAction(message)
 
-  t.deepEqual(action, {
+  expect(action).toEqual({
     type: 'ADD',
     userId: 'root_user',
     channel: 'root_channel',

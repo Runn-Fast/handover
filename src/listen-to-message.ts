@@ -1,4 +1,5 @@
-import Bolt, { KnownEventFromType } from '@slack/bolt'
+import { type KnownEventFromType } from '@slack/bolt'
+import type Bolt from '@slack/bolt'
 import PQueue from 'p-queue'
 
 type Message = KnownEventFromType<'message'>
@@ -11,7 +12,7 @@ const listenToMessage = async (
   const queue = new PQueue({ concurrency: 1 })
 
   app.event('message', async ({ payload }) =>
-    queue.add(() => onMessage(payload)),
+    queue.add(async () => onMessage(payload)),
   )
 
   app.event('reaction_added', async (message) => {

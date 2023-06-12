@@ -1,8 +1,7 @@
-import { WebClient } from '@slack/web-api'
+import { type WebClient } from '@slack/web-api'
 import mem from 'mem'
-import { User } from '@prisma/client'
+import { type User } from '@prisma/client'
 import * as z from 'zod'
-
 import * as db from './db.js'
 
 const userInfoSchema = z.object({

@@ -1,7 +1,6 @@
-import { WebClient } from '@slack/web-api'
+import { type WebClient } from '@slack/web-api'
 import * as dateFns from 'date-fns'
-import { User, Post } from '@prisma/client'
-
+import { type User, type Post } from '@prisma/client'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { formatDateAsISODate, formatDateAsTime } from './date-utils.js'
 import { generateReminder } from './ai.js'

@@ -1,5 +1,5 @@
 import * as dateFns from 'date-fns'
-import dateFnsTz from 'date-fns-tz'
+import * as dateFnsTz from 'date-fns-tz'
 
 type GetDateFromTsOptions = {
   ts: string
