@@ -38,8 +38,7 @@ test('with multiple items', () => {
 *Title*
 • this is item 1
 • this is item 2
-• this is item 3`,
-  )
+• this is item 3`)
 })
 
 test('with multiple lines in a single item', () => {
@@ -55,8 +54,7 @@ this is item 3`),
 *Title*
 • this is item 1
 • this is item 2
-• this is item 3`,
-  )
+• this is item 3`)
 })
 
 test('with existing bullet points', () => {
@@ -72,6 +70,5 @@ test('with existing bullet points', () => {
 *Title*
 • this is item 1
 • this is item 2
-• this is item 3`,
-  )
+• this is item 3`)
 })

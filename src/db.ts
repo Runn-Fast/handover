@@ -1,4 +1,6 @@
-import pkg, { type Prisma, type Post, type PostItem } from '@prisma/client'
+import type { Prisma, Post, PostItem } from '@prisma/client'
+import pkg from '@prisma/client'
+import { errorBoundary } from '@stayradiated/error-boundary'
 
 const { PrismaClient } = pkg
 const prisma = new PrismaClient()
@@ -11,96 +13,122 @@ type GetActiveUserListOptions = {
 }
 const getActiveUserList = async (options: GetActiveUserListOptions) => {
   const { activeSince } = options
-  return prisma.user.findMany({
-    where: {
-      posts: {
-        some: {
-          date: {
-            gte: activeSince,
-          },
-          items: {
-            some: {},
+  return errorBoundary(async () =>
+    prisma.user.findMany({
+      where: {
+        posts: {
+          some: {
+            date: {
+              gte: activeSince,
+            },
+            items: {
+              some: {},
+            },
           },
         },
       },
-    },
-    include: {
-      posts: {
-        orderBy: {
-          date: 'asc',
+      include: {
+        posts: {
+          orderBy: {
+            date: 'asc',
+          },
         },
       },
-    },
-  })
+    }),
+  )
 }
 
-const upsertUser = (user: Prisma.UserUncheckedCreateInput) =>
-  prisma.user.upsert({
-    create: user,
-    update: user,
-    where: { id: user.id },
-  })
+const upsertUser = async (user: Prisma.UserUncheckedCreateInput) =>
+  errorBoundary(() =>
+    prisma.user.upsert({
+      create: user,
+      update: user,
+      where: { id: user.id },
+    }),
+  )
 
-const upsertHeading = (heading: Prisma.HeadingUncheckedCreateInput) =>
-  prisma.heading.upsert({
-    create: heading,
-    update: heading,
-    where: { date: heading.date },
-  })
+const upsertHeading = async (heading: Prisma.HeadingUncheckedCreateInput) =>
+  errorBoundary(() =>
+    prisma.heading.upsert({
+      create: heading,
+      update: heading,
+      where: { date: heading.date },
+    }),
+  )
 
-const updateHeading = (headingId: number, data: Prisma.HeadingUpdateInput) =>
-  prisma.heading.update({
-    where: { id: headingId },
-    data,
-  })
+const updateHeading = async (
+  headingId: number,
+  data: Prisma.HeadingUpdateInput,
+) =>
+  errorBoundary(() =>
+    prisma.heading.update({
+      where: { id: headingId },
+      data,
+    }),
+  )
 
-const upsertPost = (post: Prisma.PostUncheckedCreateInput) =>
-  prisma.post.upsert({
-    create: post,
-    update: post,
-    where: { userDate: { userId: post.userId, date: post.date } },
-  })
+const upsertPost = async (post: Prisma.PostUncheckedCreateInput) =>
+  errorBoundary(() =>
+    prisma.post.upsert({
+      create: post,
+      update: post,
+      where: { userDate: { userId: post.userId, date: post.date } },
+    }),
+  )
 
-const updatePost = (postId: number, data: Prisma.PostUpdateInput) =>
-  prisma.post.update({
-    where: { id: postId },
-    data,
-  })
+const updatePost = async (postId: number, data: Prisma.PostUpdateInput) =>
+  errorBoundary(() =>
+    prisma.post.update({
+      where: { id: postId },
+      data,
+    }),
+  )
 
-const upsertPostItem = (postItem: Prisma.PostItemUncheckedCreateInput) =>
-  prisma.postItem.upsert({
-    create: postItem,
-    update: postItem,
-    where: { channelTs: { channel: postItem.channel, ts: postItem.ts } },
-  })
+const upsertPostItem = async (postItem: Prisma.PostItemUncheckedCreateInput) =>
+  errorBoundary(() =>
+    prisma.postItem.upsert({
+      create: postItem,
+      update: postItem,
+      where: { channelTs: { channel: postItem.channel, ts: postItem.ts } },
+    }),
+  )
 
-const getReminder = (reminder: { userId: string; date: string }) => {
-  return prisma.reminder.findUnique({
-    where: {
-      userDate: { userId: reminder.userId, date: new Date(reminder.date) },
-    },
-  })
+const getReminder = async (reminder: { userId: string; date: string }) => {
+  return errorBoundary(() =>
+    prisma.reminder.findUnique({
+      where: {
+        userDate: { userId: reminder.userId, date: new Date(reminder.date) },
+      },
+    }),
+  )
 }
 
-const upsertReminder = (reminder: Prisma.ReminderUncheckedCreateInput) =>
-  prisma.reminder.upsert({
-    create: reminder,
-    update: reminder,
-    where: { userDate: { userId: reminder.userId, date: reminder.date } },
-  })
+const upsertReminder = async (reminder: Prisma.ReminderUncheckedCreateInput) =>
+  errorBoundary(() =>
+    prisma.reminder.upsert({
+      create: reminder,
+      update: reminder,
+      where: { userDate: { userId: reminder.userId, date: reminder.date } },
+    }),
+  )
 
-const updateReminder = (reminderId: number, data: Prisma.ReminderUpdateInput) =>
-  prisma.reminder.update({
-    where: { id: reminderId },
-    data,
-  })
+const updateReminder = async (
+  reminderId: number,
+  data: Prisma.ReminderUpdateInput,
+) =>
+  errorBoundary(() =>
+    prisma.reminder.update({
+      where: { id: reminderId },
+      data,
+    }),
+  )
 
 type AddPostOptions = {
   userId: string
   title: string
   date: string
 }
-const addPost = async (options: AddPostOptions): Promise<Post> => {
+const addPost = async (options: AddPostOptions): Promise<Post | Error> => {
   const post = await upsertPost(options)
   return post
 }
@@ -111,7 +139,9 @@ type AddPostItemOptions = {
   ts: string
   text: string
 }
-const addPostItem = async (options: AddPostItemOptions): Promise<PostItem> => {
+const addPostItem = async (
+  options: AddPostItemOptions,
+): Promise<PostItem | Error> => {
   const postItem = await upsertPostItem(options)
   return postItem
 }
@@ -121,11 +151,13 @@ type DeletePostItemOptions = {
   ts: string
 }
 
-const deletePostItem = (options: DeletePostItemOptions) => {
+const deletePostItem = async (options: DeletePostItemOptions) => {
   const { channel, ts } = options
-  return prisma.postItem.delete({
-    where: { channelTs: { channel, ts } },
-  })
+  return errorBoundary(() =>
+    prisma.postItem.delete({
+      where: { channelTs: { channel, ts } },
+    }),
+  )
 }
 
 type GetPostWithItemsOptions = {
@@ -133,21 +165,26 @@ type GetPostWithItemsOptions = {
   date: string
 }
 
-const getPostWithItems = (options: GetPostWithItemsOptions) => {
+const getPostWithItems = async (options: GetPostWithItemsOptions) => {
   const { userId, date } = options
-  return prisma.post.findUnique({
-    where: { userDate: { userId, date: new Date(date) } },
-    include: {
-      items: {
-        orderBy: {
-          ts: 'asc',
+  return errorBoundary(() =>
+    prisma.post.findUnique({
+      where: { userDate: { userId, date: new Date(date) } },
+      include: {
+        items: {
+          orderBy: {
+            ts: 'asc',
+          },
         },
       },
-    },
-  })
+    }),
+  )
 }
 
-type PostWithItems = NonNullable<Awaited<ReturnType<typeof getPostWithItems>>>
+type PostWithItems = Extract<
+  NonNullable<Awaited<ReturnType<typeof getPostWithItems>>>,
+  Post
+>
 
 export {
   getUserList,

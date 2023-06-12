@@ -1,12 +1,15 @@
 import Bolt from '@slack/bolt'
 import { WebClient } from '@slack/web-api'
 import * as dateFns from 'date-fns'
-import createUserFetcher from './create-user-fetcher.js'
+import { errorListBoundary } from '@stayradiated/error-boundary'
+import { createUserFetcher } from './create-user-fetcher.js'
+import type { UserFetcher } from './create-user-fetcher.js'
 import { listenToMessage } from './listen-to-message.js'
+import type { Message } from './listen-to-message.js'
 import { mapMessageToAction } from './map-message-to-action.js'
 import { formatPostAsText } from './format-post-as-text.js'
 import { publishPublicContentToSlack } from './publish-to-slack.js'
-import { getDateFromTs } from './date-utils.js'
+import { getDateFromTs, getDateFromMessage } from './date-utils.js'
 import { checkAndRemindUsers } from './remind-user.js'
 import {
   SLACK_BOT_TOKEN,
@@ -23,7 +26,9 @@ type AddHeadingOptions = {
   date: string
 }
 
-const addHeading = async (options: AddHeadingOptions) => {
+const addHeading = async (
+  options: AddHeadingOptions,
+): Promise<void | Error> => {
   const { web, date } = options
 
   const heading = await db.upsertHeading({
@@ -33,6 +38,10 @@ const addHeading = async (options: AddHeadingOptions) => {
       'PPPP',
     )}*`,
   })
+  if (heading instanceof Error) {
+    return heading
+  }
+
   if (!heading.ts) {
     const headingTs = await publishPublicContentToSlack({
       web,
@@ -40,25 +49,51 @@ const addHeading = async (options: AddHeadingOptions) => {
       ts: undefined,
       text: heading.title,
     })
-    await db.updateHeading(heading.id, {
+    if (headingTs instanceof Error) {
+      return headingTs
+    }
+
+    const updateHeadingResult = await db.updateHeading(heading.id, {
       channel: HANDOVER_CHANNEL,
       ts: headingTs,
     })
+    if (updateHeadingResult instanceof Error) {
+      return updateHeadingResult
+    }
 
     const userList = await db.getActiveUserList({
       activeSince: dateFns.subDays(dateFns.parseISO(date), 7),
     })
+    if (userList instanceof Error) {
+      return userList
+    }
 
-    await Promise.all(
-      userList.map(async (user) => {
-        await db.addPost({
-          userId: user.id,
-          title: user.name,
-          date,
-        })
-        await updateUserPost({ web, userId: user.id, date })
-      }),
+    const bulkUpdateResult = await errorListBoundary(async () =>
+      Promise.all(
+        userList.map(async (user): Promise<void | Error> => {
+          const addPostResult = await db.addPost({
+            userId: user.id,
+            title: user.name,
+            date,
+          })
+          if (addPostResult instanceof Error) {
+            return addPostResult
+          }
+
+          const updateUserResult = await updateUserPost({
+            web,
+            userId: user.id,
+            date,
+          })
+          if (updateUserResult instanceof Error) {
+            return updateUserResult
+          }
+        }),
+      ),
     )
+    if (bulkUpdateResult instanceof Error) {
+      return bulkUpdateResult
+    }
   }
 }
 
@@ -68,7 +103,9 @@ type UpdateHandoverOptions = {
   date: string
 }
 
-const updateUserPost = async (options: UpdateHandoverOptions) => {
+const updateUserPost = async (
+  options: UpdateHandoverOptions,
+): Promise<void | Error> => {
   const { web, userId, date } = options
 
   const post = await db.getPostWithItems({
@@ -76,7 +113,11 @@ const updateUserPost = async (options: UpdateHandoverOptions) => {
     date,
   })
   if (!post) {
-    throw new Error('Could not find with post with items')
+    return new Error('Could not find with post with items')
+  }
+
+  if (post instanceof Error) {
+    return post
   }
 
   const text = formatPostAsText(post)
@@ -88,11 +129,17 @@ const updateUserPost = async (options: UpdateHandoverOptions) => {
     ts,
     text,
   })
+  if (publishedTs instanceof Error) {
+    return publishedTs
+  }
 
-  await db.updatePost(post.id, {
+  const updatePostResult = await db.updatePost(post.id, {
     channel: HANDOVER_CHANNEL,
     ts: publishedTs,
   })
+  if (updatePostResult instanceof Error) {
+    return updatePostResult
+  }
 }
 
 type AddPostItemOptions = {
@@ -104,21 +151,42 @@ type AddPostItemOptions = {
   ts: string
   text: string
 }
-const addPostItem = async (options: AddPostItemOptions) => {
+const addPostItem = async (
+  options: AddPostItemOptions,
+): Promise<void | Error> => {
   const { web, userId, postTitle, postDate, channel, ts, text } = options
   const post = await db.addPost({
     userId,
     title: postTitle,
     date: postDate,
   })
-  await db.addPostItem({
+  if (post instanceof Error) {
+    return post
+  }
+
+  const addPostItemResult = await db.addPostItem({
     postId: post.id,
     channel,
     ts,
     text,
   })
-  await addHeading({ web, date: postDate })
-  await updateUserPost({ web, userId, date: postDate })
+  if (addPostItemResult instanceof Error) {
+    return addPostItemResult
+  }
+
+  const addHeadingResult = await addHeading({ web, date: postDate })
+  if (addHeadingResult instanceof Error) {
+    return addHeadingResult
+  }
+
+  const updateUserPostResult = await updateUserPost({
+    web,
+    userId,
+    date: postDate,
+  })
+  if (updateUserPostResult instanceof Error) {
+    return updateUserPostResult
+  }
 }
 
 type DeletePostItemOptions = {
@@ -128,14 +196,96 @@ type DeletePostItemOptions = {
   channel: string
   ts: string
 }
-const deletePostItem = async (options: DeletePostItemOptions) => {
+const deletePostItem = async (
+  options: DeletePostItemOptions,
+): Promise<void | Error> => {
   const { web, userId, postDate, channel, ts } = options
-  await db.deletePostItem({
+  const deletePostItemResult = await db.deletePostItem({
     channel,
     ts,
   })
-  await addHeading({ web, date: postDate })
-  await updateUserPost({ web, userId, date: postDate })
+  if (deletePostItemResult instanceof Error) {
+    return deletePostItemResult
+  }
+
+  const addHeadingResult = await addHeading({ web, date: postDate })
+  if (addHeadingResult instanceof Error) {
+    return addHeadingResult
+  }
+
+  const updateUserPostResult = await updateUserPost({
+    web,
+    userId,
+    date: postDate,
+  })
+  if (updateUserPostResult instanceof Error) {
+    return updateUserPostResult
+  }
+}
+
+type CreateMessageHandlerOptions = {
+  fetchUser: UserFetcher
+  web: WebClient
+}
+
+const createMessageHandler = (options: CreateMessageHandlerOptions) => {
+  const { fetchUser, web } = options
+
+  const handleMessage = async (message: Message): Promise<void | Error> => {
+    const action = mapMessageToAction(message)
+    if (action instanceof Error) {
+      return action
+    }
+
+    const user = await fetchUser(action.userId)
+    if (user instanceof Error) {
+      return user
+    }
+
+    const actionDate = getDateFromTs({
+      ts: action.ts,
+      timeZone: user.timeZone,
+      dayStartsAtHour: 0,
+    })
+
+    const messageDate = getDateFromMessage({
+      messageText: action.text,
+      ts: action.ts,
+      timeZone: user.timeZone,
+    })
+
+    const date = messageDate ?? actionDate
+
+    console.log(user.name, date.split('T')[0])
+
+    if (action.type === 'ADD' || action.type === 'CHANGE') {
+      const addPostItemResult = await addPostItem({
+        web,
+        userId: action.userId,
+        postTitle: user.name,
+        postDate: date,
+        channel: action.channel,
+        ts: action.ts,
+        text: action.text,
+      })
+      if (addPostItemResult instanceof Error) {
+        return addPostItemResult
+      }
+    } else if (action.type === 'REMOVE') {
+      const deletePostItemResult = await deletePostItem({
+        web,
+        userId: action.userId,
+        postDate: date,
+        channel: action.channel,
+        ts: action.ts,
+      })
+      if (deletePostItemResult instanceof Error) {
+        return deletePostItemResult
+      }
+    }
+  }
+
+  return handleMessage
 }
 
 const start = async () => {
@@ -146,7 +296,14 @@ const start = async () => {
   const userList = await db.getUserList()
   await Promise.all(
     userList.map(async (user) => {
-      await fetchUser(user.id)
+      const fetchUserResult = await fetchUser(user.id)
+      if (fetchUserResult instanceof Error) {
+        console.error(
+          new Error(`Could not fetch info for user ${user.id}`, {
+            cause: fetchUserResult,
+          }),
+        )
+      }
     }),
   )
 
@@ -167,37 +324,15 @@ const start = async () => {
     ],
   })
 
+  const handleMessage = createMessageHandler({
+    fetchUser,
+    web,
+  })
+
   await listenToMessage(slackBoltApp, async (message) => {
-    console.log(message)
-    const action = mapMessageToAction(message)
-    console.log(action)
-
-    const user = await fetchUser(action.userId)
-    const date = getDateFromTs({
-      ts: action.ts,
-      timeZone: user.timeZone,
-      dayStartsAtHour: 3,
-    })
-    console.log(user.name, date.split('T')[0])
-
-    if (action.type === 'ADD' || action.type === 'CHANGE') {
-      await addPostItem({
-        web,
-        userId: action.userId,
-        postTitle: user.name,
-        postDate: date,
-        channel: action.channel,
-        ts: action.ts,
-        text: action.text,
-      })
-    } else if (action.type === 'REMOVE') {
-      await deletePostItem({
-        web,
-        userId: action.userId,
-        postDate: date,
-        channel: action.channel,
-        ts: action.ts,
-      })
+    const result = await handleMessage(message)
+    if (result instanceof Error) {
+      console.error(result)
     }
   })
 
@@ -205,10 +340,9 @@ const start = async () => {
 
   // Check if there are any users who need reminding to send their handover.
   setInterval(async () => {
-    try {
-      await checkAndRemindUsers({ web })
-    } catch (error: unknown) {
-      console.error(error)
+    const result = await checkAndRemindUsers({ web })
+    if (result instanceof Error) {
+      console.error(result)
     }
   }, 60 * 1000)
 }

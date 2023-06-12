@@ -1,6 +1,7 @@
-import { type WebClient } from '@slack/web-api'
+import type { WebClient } from '@slack/web-api'
 import * as dateFns from 'date-fns'
-import { type User, type Post } from '@prisma/client'
+import type { User, Post } from '@prisma/client'
+import { errorListBoundary } from '@stayradiated/error-boundary'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { formatDateAsISODate, formatDateAsTime } from './date-utils.js'
 import { generateReminder } from './ai.js'
@@ -29,7 +30,9 @@ type SendReminderToUserOptions = {
   userDate: string
 }
 
-const sendReminderToUser = async (options: SendReminderToUserOptions) => {
+const sendReminderToUser = async (
+  options: SendReminderToUserOptions,
+): Promise<void | Error> => {
   const { web, user, userDate } = options
 
   const dateOfLastPostUTC = getLatestPost(user.posts)?.date
@@ -60,58 +63,86 @@ const sendReminderToUser = async (options: SendReminderToUserOptions) => {
     userId: user.id,
     text: reminderText,
   })
+  if (messageTs instanceof Error) {
+    return messageTs
+  }
 
-  await db.upsertReminder({
+  const upsertReminderResult = await db.upsertReminder({
     userId: user.id,
     date: userDate,
     text: reminderText,
     channel: user.id,
     ts: messageTs,
   })
+  if (upsertReminderResult instanceof Error) {
+    return upsertReminderResult
+  }
 }
 
 type CheckAndRemindUsersOptions = {
   web: WebClient
 }
-const checkAndRemindUsers = async (options: CheckAndRemindUsersOptions) => {
+const checkAndRemindUsers = async (
+  options: CheckAndRemindUsersOptions,
+): Promise<void | Error> => {
   const { web } = options
   const now = new Date()
   const userList = await db.getActiveUserList({
     activeSince: dateFns.subDays(now, DAYS_SINCE_LAST_POST_CUT_OFF),
   })
+  if (userList instanceof Error) {
+    return userList
+  }
 
-  await Promise.all(
-    userList.map(async (user) => {
-      const userTime = formatDateAsTime({ date: now, timeZone: user.timeZone })
-      const userDate = formatDateAsISODate({
-        date: now,
-        timeZone: user.timeZone,
-      })
-      const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
-
-      if (userTime >= HANDOVER_DAILY_REMINDER_TIME && !isWeekend) {
-        const post = await db.getPostWithItems({
-          userId: user.id,
-          date: userDate,
+  const result = await errorListBoundary(async () =>
+    Promise.all(
+      userList.map(async (user): Promise<void | Error> => {
+        const userTime = formatDateAsTime({
+          date: now,
+          timeZone: user.timeZone,
         })
+        const userDate = formatDateAsISODate({
+          date: now,
+          timeZone: user.timeZone,
+        })
+        const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
 
-        if (!post || post.items.length === 0) {
-          const reminder = await db.getReminder({
+        if (userTime >= HANDOVER_DAILY_REMINDER_TIME && !isWeekend) {
+          const post = await db.getPostWithItems({
             userId: user.id,
             date: userDate,
           })
+          if (post instanceof Error) {
+            return post
+          }
 
-          if (!reminder || !reminder.ts) {
-            await sendReminderToUser({
-              web,
-              user,
-              userDate,
+          if (!post || post.items.length === 0) {
+            const reminder = await db.getReminder({
+              userId: user.id,
+              date: userDate,
             })
+            if (reminder instanceof Error) {
+              return reminder
+            }
+
+            if (!reminder || !reminder.ts) {
+              const sendReminderToUserResult = await sendReminderToUser({
+                web,
+                user,
+                userDate,
+              })
+              if (sendReminderToUserResult instanceof Error) {
+                return sendReminderToUserResult
+              }
+            }
           }
         }
-      }
-    }),
+      }),
+    ),
   )
+  if (result instanceof Error) {
+    return result
+  }
 }
 
 export { sendReminderToUser, checkAndRemindUsers, getLatestPost }

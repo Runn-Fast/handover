@@ -27,3 +27,4 @@ const listenToMessage = async (
 }
 
 export { listenToMessage }
+export type { Message, OnMessageFn }

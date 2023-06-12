@@ -1,4 +1,4 @@
-import { type PostWithItems } from './db.js'
+import type { PostWithItems } from './db.js'
 
 const formatPostAsText = (post: PostWithItems): string => {
   const { title, items } = post

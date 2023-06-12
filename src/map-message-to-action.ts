@@ -36,7 +36,7 @@ type Action = {
   text: string
 }
 
-const mapMessageToAction = (message: unknown): Action => {
+const mapMessageToAction = (message: unknown): Action | Error => {
   const messageChanged = messageChangedSchema.safeParse(message)
   if (messageChanged.success) {
     return {
@@ -65,7 +65,7 @@ const mapMessageToAction = (message: unknown): Action => {
       messageAdded.data.subtype === 'bot_message' ||
       messageAdded.data.subtype === 'reminder_add'
     ) {
-      throw new Error('Ignoring message from bot…')
+      return new Error('Ignoring message from bot…')
     }
 
     return {
@@ -83,7 +83,7 @@ const mapMessageToAction = (message: unknown): Action => {
     messageDeleted: messageDeleted.error,
   })
 
-  throw new Error('Invalid message format')
+  return new Error('Invalid message format')
 }
 
 export { mapMessageToAction }

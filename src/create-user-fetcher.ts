@@ -1,7 +1,8 @@
-import { type WebClient } from '@slack/web-api'
+import type { WebClient } from '@slack/web-api'
 import mem from 'mem'
-import { type User } from '@prisma/client'
+import type { User } from '@prisma/client'
 import * as z from 'zod'
+import { errorBoundary } from '@stayradiated/error-boundary'
 import * as db from './db.js'
 
 const userInfoSchema = z.object({
@@ -18,16 +19,22 @@ const userInfoSchema = z.object({
   }),
 })
 
-type UserFetcher = (user: string) => Promise<User>
+type UserFetcher = (user: string) => Promise<User | Error>
 
 const forceFetchUser =
   (web: WebClient): UserFetcher =>
-  async (userId: string): Promise<User> => {
+  async (userId) => {
     console.log(`Fetching info for ID "${userId}"`)
-    const result = await web.users.info({ user: userId })
+    const result = await errorBoundary(async () =>
+      web.users.info({ user: userId }),
+    )
+    if (result instanceof Error) {
+      return result
+    }
+
     const userInfo = userInfoSchema.safeParse(result.user)
     if (!userInfo.success) {
-      throw userInfo.error
+      return userInfo.error
     }
 
     const user = await db.upsertUser({
@@ -41,9 +48,11 @@ const forceFetchUser =
 
 const createUserFetcher = (web: WebClient): UserFetcher => {
   const fetchUser = mem(forceFetchUser(web), {
+    cacheKey: ([userId]) => userId,
     maxAge: 5 * 60 * 1000,
   })
   return fetchUser
 }
 
-export default createUserFetcher
+export { createUserFetcher }
+export type { UserFetcher }

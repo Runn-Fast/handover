@@ -1,5 +1,6 @@
 import * as dateFns from 'date-fns'
 import * as dateFnsTz from 'date-fns-tz'
+import * as chrono from 'chrono-node'
 
 type GetDateFromTsOptions = {
   ts: string
@@ -19,6 +20,43 @@ const getDateFromTs = (options: GetDateFromTsOptions): string => {
     dateFns.fromUnixTime(Number.parseInt(ts, 10)),
     dayStartsAtHour,
   )
+
+  const output = formatDateAsISODate({
+    date,
+    timeZone,
+  })
+
+  return output
+}
+
+type GetDateFromMessageOptions = {
+  messageText: string
+  ts: string
+  timeZone: string
+}
+
+const getDateFromMessage = (
+  options: GetDateFromMessageOptions,
+): undefined | string => {
+  const { messageText, ts, timeZone } = options
+
+  const instant = dateFns.fromUnixTime(Number.parseInt(ts, 10))
+
+  // Match if text starts with "(date):"
+  const match = /^\((.+)\):/.exec(messageText)?.[1]
+  if (typeof match !== 'string') {
+    return
+  }
+
+  const date = chrono.parseDate(match, {
+    instant,
+    timezone: timeZone,
+  })
+
+  if (date > instant) {
+    // Date is in the future, so it's probably a mistake
+    return
+  }
 
   const output = formatDateAsISODate({
     date,
@@ -62,4 +100,10 @@ const formatDateAsTime = (options: FormatDateAsTimeOptions) => {
   return formatDate({ date, timeZone, format: 'HH:mm' })
 }
 
-export { getDateFromTs, formatDate, formatDateAsTime, formatDateAsISODate }
+export {
+  getDateFromTs,
+  getDateFromMessage,
+  formatDate,
+  formatDateAsTime,
+  formatDateAsISODate,
+}
