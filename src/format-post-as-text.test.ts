@@ -72,3 +72,22 @@ test('with existing bullet points', () => {
 • this is item 2
 • this is item 3`)
 })
+
+test('with nested bullet points', () => {
+  const text = formatPostAsText(
+    post('Title', [
+      item(`
+• item a
+  ◦ item b
+    ▪︎ item c
+      • item d`),
+    ]),
+  )
+
+  expect(text).toEqual(`
+*Title*
+• item a
+  ◦ item b
+    ▪︎ item c
+      • item d`)
+})

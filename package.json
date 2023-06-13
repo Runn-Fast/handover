@@ -7,11 +7,12 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "tidy": "xo --fix",
-    "test": "env-cmd -- vitest --watch=false",
+    "test": "env-cmd -f .env.test -- vitest --watch=false",
     "build": "rm -rf ./dist && tsc",
     "start": "node ./dist/index.js",
     "dev": "nodemon -I --exec node --experimental-specifier-resolution=node  --loader ts-node/esm ./src/index.ts",
-    "prisma": "prisma"
+    "prisma": "prisma",
+    "prisma:test": "env-cmd -f .env.test -- prisma"
   },
   "repository": {
     "type": "git",
@@ -32,7 +33,7 @@
   },
   "homepage": "https://github.com/Runn-Fast/handover#readme",
   "devDependencies": {
-    "@types/node": "20.3.0",
+    "@types/node": "20.3.1",
     "del-cli": "5.0.0",
     "env-cmd": "10.1.0",
     "nodemon": "2.0.22",

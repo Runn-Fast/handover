@@ -1,5 +1,9 @@
 import type { PostWithItems } from './db.js'
 
+const lineStartsWithBullet = (line: string): boolean => {
+  return /^\s*[•◦▪︎]/.test(line)
+}
+
 const formatPostAsText = (post: PostWithItems): string => {
   const { title, items } = post
 
@@ -13,7 +17,7 @@ const formatPostAsText = (post: PostWithItems): string => {
 
   const formattedLines = lines
     .map((line) => {
-      if (line.trim().startsWith('•')) {
+      if (lineStartsWithBullet(line)) {
         return line
       }
 
