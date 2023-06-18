@@ -1,4 +1,5 @@
 import * as z from 'zod'
+import type { Action } from './types.js'
 
 const messageAddedSchema = z.object({
   subtype: z.optional(z.string()),
@@ -27,14 +28,6 @@ const messageDeletedSchema = z.object({
     text: z.string(),
   }),
 })
-
-type Action = {
-  type: 'CHANGE' | 'REMOVE' | 'ADD'
-  userId: string
-  channel: string
-  ts: string
-  text: string
-}
 
 const mapMessageToAction = (message: unknown): Action | Error => {
   const messageChanged = messageChangedSchema.safeParse(message)

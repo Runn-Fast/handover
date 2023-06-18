@@ -20,6 +20,8 @@ import {
   SLACK_SIGNING_SECRET,
 } from './constants.js'
 import * as db from './db.js'
+import { isCommand, handleCommand } from './command.js'
+import { getFormatFnList } from './format.js'
 
 type AddHeadingOptions = {
   web: WebClient
@@ -120,7 +122,9 @@ const updateUserPost = async (
     return post
   }
 
-  const text = formatPostAsText(post)
+  const formatFnList = await getFormatFnList()
+
+  const text = formatPostAsText({ post, formatFnList })
   const ts = post.ts ?? undefined
 
   const publishedTs = await publishPublicContentToSlack({
@@ -240,6 +244,11 @@ const createMessageHandler = (options: CreateMessageHandlerOptions) => {
     const user = await fetchUser(action.userId)
     if (user instanceof Error) {
       return user
+    }
+
+    if (action.type === 'ADD' && isCommand(action.text)) {
+      await handleCommand({ action, web })
+      return
     }
 
     const actionDate = getDateFromTs({

@@ -26,13 +26,13 @@ const item = (text: string): PostItem => ({
 })
 
 test('with multiple items', () => {
-  const text = formatPostAsText(
-    post('Title', [
+  const text = formatPostAsText({
+    post: post('Title', [
       item('this is item 1'),
       item('this is item 2'),
       item('this is item 3'),
     ]),
-  )
+  })
 
   expect(text).toEqual(`
 *Title*
@@ -42,13 +42,13 @@ test('with multiple items', () => {
 })
 
 test('with multiple lines in a single item', () => {
-  const text = formatPostAsText(
-    post('Title', [
+  const text = formatPostAsText({
+    post: post('Title', [
       item(`this is item 1
 this is item 2
 this is item 3`),
     ]),
-  )
+  })
 
   expect(text).toEqual(`
 *Title*
@@ -58,13 +58,13 @@ this is item 3`),
 })
 
 test('with existing bullet points', () => {
-  const text = formatPostAsText(
-    post('Title', [
+  const text = formatPostAsText({
+    post: post('Title', [
       item(`• this is item 1
 • this is item 2
 • this is item 3`),
     ]),
-  )
+  })
 
   expect(text).toEqual(`
 *Title*
@@ -74,15 +74,15 @@ test('with existing bullet points', () => {
 })
 
 test('with nested bullet points', () => {
-  const text = formatPostAsText(
-    post('Title', [
+  const text = formatPostAsText({
+    post: post('Title', [
       item(`
 • item a
   ◦ item b
     ▪︎ item c
       • item d`),
     ]),
-  )
+  })
 
   expect(text).toEqual(`
 *Title*

@@ -19,6 +19,7 @@ model User {
 
   posts    Post[]
   Reminder Reminder[]
+  Format   Format[]
 }
 
 model Post {
@@ -82,4 +83,16 @@ model Reminder {
 
   @@unique([channel, ts], name: "channelTs")
   @@unique([userId, date], name: "userDate")
+}
+
+model Format {
+  id          String    @id
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  pattern     String
+  replacement String
+  userId      String
+  deletedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id])
 }

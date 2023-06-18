@@ -186,6 +186,41 @@ type PostWithItems = Extract<
   Post
 >
 
+const upsertFormat = async (format: Prisma.FormatUncheckedCreateInput) => {
+  return errorBoundary(() =>
+    prisma.format.upsert({
+      create: format,
+      update: format,
+      where: { id: format.id },
+    }),
+  )
+}
+
+const updateFormatDeletedAt = async (formatId: string) => {
+  return errorBoundary(() =>
+    prisma.format.update({
+      data: { deletedAt: new Date() },
+      where: { id: formatId },
+    }),
+  )
+}
+
+const getFormatList = async () => {
+  return errorBoundary(async () =>
+    prisma.format.findMany({
+      include: {
+        user: true,
+      },
+      where: {
+        deletedAt: null,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    }),
+  )
+}
+
 export {
   getUserList,
   getActiveUserList,
@@ -201,6 +236,9 @@ export {
   addPostItem,
   deletePostItem,
   getPostWithItems,
+  upsertFormat,
+  updateFormatDeletedAt,
+  getFormatList,
 }
 
 export type { PostWithItems }

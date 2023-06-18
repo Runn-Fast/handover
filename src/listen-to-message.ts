@@ -1,4 +1,4 @@
-import { type KnownEventFromType } from '@slack/bolt'
+import type { KnownEventFromType } from '@slack/bolt'
 import type Bolt from '@slack/bolt'
 import PQueue from 'p-queue'
 
