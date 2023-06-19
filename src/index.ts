@@ -5,7 +5,7 @@ import { errorListBoundary } from '@stayradiated/error-boundary'
 import { createUserFetcher } from './create-user-fetcher.js'
 import type { UserFetcher } from './create-user-fetcher.js'
 import { listenToMessage } from './listen-to-message.js'
-import type { Message } from './listen-to-message.js'
+import type { Message, Context } from './types.js'
 import { mapMessageToAction } from './map-message-to-action.js'
 import { formatPostAsText } from './format-post-as-text.js'
 import { publishPublicContentToSlack } from './publish-to-slack.js'
@@ -235,7 +235,10 @@ type CreateMessageHandlerOptions = {
 const createMessageHandler = (options: CreateMessageHandlerOptions) => {
   const { fetchUser, web } = options
 
-  const handleMessage = async (message: Message): Promise<void | Error> => {
+  const handleMessage = async (
+    message: Message,
+    context: Context,
+  ): Promise<void | Error> => {
     const action = mapMessageToAction(message)
     if (action instanceof Error) {
       return action
@@ -246,7 +249,14 @@ const createMessageHandler = (options: CreateMessageHandlerOptions) => {
       return user
     }
 
-    if (action.type === 'ADD' && isCommand(action.text)) {
+    if (
+      context.botUserId &&
+      action.type === 'ADD' &&
+      isCommand({
+        botUserId: context.botUserId,
+        text: action.text,
+      })
+    ) {
       await handleCommand({ action, web })
       return
     }
@@ -338,8 +348,8 @@ const start = async () => {
     web,
   })
 
-  await listenToMessage(slackBoltApp, async (message) => {
-    const result = await handleMessage(message)
+  await listenToMessage(slackBoltApp, async (message, context) => {
+    const result = await handleMessage(message, context)
     if (result instanceof Error) {
       console.error(result)
     }

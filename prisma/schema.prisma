@@ -92,6 +92,7 @@ model Format {
   pattern     String
   replacement String
   userId      String
+  description String?
   deletedAt   DateTime?
 
   user User @relation(fields: [userId], references: [id])

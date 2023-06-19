@@ -6,6 +6,7 @@ CREATE TABLE "Format" (
     "pattern" TEXT NOT NULL,
     "replacement" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "description" TEXT,
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Format_pkey" PRIMARY KEY ("id")

@@ -9,10 +9,11 @@ type SetFormatOptions = {
   pattern: string
   replacement: string
   userId: string
+  description?: string
 }
 
 const setFormat = async (options: SetFormatOptions): Promise<string> => {
-  const { id, pattern, replacement, userId } = options
+  const { id, pattern, replacement, userId, description } = options
 
   try {
     parseRegExp(pattern)
@@ -29,6 +30,7 @@ const setFormat = async (options: SetFormatOptions): Promise<string> => {
     replacement,
     userId,
     deletedAt: null,
+    description,
   })
   if (result instanceof Error) {
     return `⚠️ Database Error:\n${result.message}`
@@ -47,12 +49,20 @@ const listFormats = async (_options: ListFormatsOptions): Promise<string> => {
 
   let formatList = list
     .map((format) => {
-      return `• ${format.id} \`${format.pattern}\` ⇒ \`${
-        format.replacement
-      }\` by <@${format.userId}> on ${dateFns.format(
+      let row = `• *${format.id}*`
+      if (format.description) {
+        row += `: ${format.description}`
+      }
+
+      row += `\n   \`${format.pattern}\` ⇒ \`${format.replacement}\``
+
+      row += `\n   _Created by <@${format.userId}> on ${dateFns.format(
         format.updatedAt,
-        'yyyy.MM.dd',
-      )}`
+        // Tue, 15 Jun 2021
+        'EEE, d MMM yyyy',
+      )}_`
+
+      return row
     })
     .join('\n')
 

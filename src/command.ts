@@ -1,129 +1,9 @@
 import type { WebClient } from '@slack/web-api'
 import { CliCommand } from 'cilly'
-import type {
-  ArgumentDefinition,
-  CommandDefinition,
-  OptionDefinition,
-} from 'cilly'
-import { getNegatedFlag } from 'cilly/dist/tokens/token-parser.js'
 import type { Action } from './types.js'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { setFormat, listFormats, deleteFormat } from './format.js'
-
-/* https://github.com/cilly-cli/cilly - src/presentation.ts */
-
-const padToLength = (string_: string, length: number): string => {
-  const padding = length - string_.length
-  string_ += ' '.repeat(padding)
-  return string_
-}
-
-const formatArguments = (args: ArgumentDefinition[]): string => {
-  const argStrings: string[] = []
-  for (const arg of args) {
-    let argString = arg.name
-    if (arg.variadic) {
-      argString = `...${argString}`
-    }
-
-    argString = arg.required ? `<${argString}>` : `[${argString}]`
-    argStrings.push(argString)
-  }
-
-  return argStrings.length > 0 ? argStrings.join(' ') + ' ' : ''
-}
-
-const formatOptions = (options: OptionDefinition[]): string => {
-  const padding = 4
-  let maxOptionLength = 0
-  const optStrings: string[] = []
-
-  // Generate option definition string, max length for justification
-  for (const opt of options) {
-    let optString = `  ${opt.name[0]}, ${opt.name[1]}`
-    if (opt.args.length > 0) {
-      optString += ` ${formatArguments(opt.args)}`
-    }
-
-    if (opt.negatable) {
-      optString += ` (${getNegatedFlag(opt.name[1])})`
-    }
-
-    if (optString.length > maxOptionLength) {
-      maxOptionLength = optString.length
-    }
-
-    optStrings.push(optString)
-  }
-
-  for (const [i, option] of options.entries()) {
-    const opt = option
-    let optString = optStrings[i]!
-    optString = padToLength(optString, maxOptionLength + padding)
-
-    if (opt.required) {
-      optString += ' (required)'
-    }
-
-    if (opt.description) {
-      optString += ` ${opt.description}`
-    }
-
-    if (opt.defaultValue !== undefined) {
-      optString += ` (default: ${JSON.stringify(opt.defaultValue)})`
-    }
-
-    optStrings[i] = optString
-  }
-
-  return optStrings.join('\n')
-}
-
-const formatCommandUsage = (command: CommandDefinition): string => {
-  return `${command.name} ${formatArguments(command.args)}[options]`
-}
-
-const formatSubCommands = (subCommands: CommandDefinition[]): string => {
-  return subCommands.map((c) => `  ${formatCommandUsage(c)}`).join('\n')
-}
-
-const formatCommandDefinition = (command: CommandDefinition): string => {
-  let output = `Usage: ${formatCommandUsage(command)}` + '\n\n'
-
-  if (command.description) {
-    output += command.description + '\n\n'
-  }
-
-  if (command.opts.length > 0) {
-    output += `Options:\n${formatOptions(command.opts)}\n\n`
-  }
-
-  if (command.subCommands.length > 0) {
-    output += `Commands:\n${formatSubCommands(command.subCommands)}\n\n`
-  }
-
-  return output
-}
-
-const createShowHelp = (web: WebClient, userId: string) => {
-  const showHelp = async (command: CommandDefinition): Promise<void> => {
-    await publishPrivateContentToSlack({
-      web,
-      userId,
-      text: formatCommandDefinition(command),
-    })
-  }
-
-  return showHelp
-}
-
-const stripQuotes = (string_: string): string => {
-  if (string_.startsWith('`') && string_.endsWith('`')) {
-    return string_.slice(1, -1)
-  }
-
-  return string_
-}
+import { createShowHelp } from './cilly-show-help.js'
 
 type CreateHandoverCommandOptions = {
   web: WebClient
@@ -148,23 +28,25 @@ const createHandoverCommand = (
       },
       {
         name: 'replacement',
-        variadic: true,
         required: true,
       },
     )
+    .withOptions({
+      name: ['-d', '--description'],
+      args: [{ name: 'text', required: true }],
+    })
     .withHelpHandler(showHelp)
-    .withHandler(async (args) => {
-      const {
-        id: idRaw,
-        pattern: patternRaw,
-        replacement: replacementRaw,
-      } = args
+    .withHandler(async (args, options) => {
+      const { id, pattern, replacement } = args
+      const { description } = options
 
-      const id = stripQuotes(idRaw)
-      const pattern = stripQuotes(patternRaw)
-      const replacement = stripQuotes(replacementRaw.join(' '))
-
-      const response = await setFormat({ id, pattern, replacement, userId })
+      const response = await setFormat({
+        id,
+        pattern,
+        replacement,
+        userId,
+        description,
+      })
 
       await publishPrivateContentToSlack({
         web,
@@ -180,9 +62,7 @@ const createHandoverCommand = (
     })
     .withHelpHandler(showHelp)
     .withHandler(async (args) => {
-      const { id: idRaw } = args
-
-      const id = stripQuotes(idRaw)
+      const { id } = args
 
       const response = await deleteFormat({ id })
 
@@ -222,17 +102,27 @@ const createHandoverCommand = (
   return handoverCmd
 }
 
-const cmdPrefix = '<@U038H6X4CJK>'
-
-const isCommand = (text: string): boolean => {
-  return text.startsWith(cmdPrefix)
+type IsCommandOptions = {
+  botUserId: string
+  text: string
+}
+const isCommand = (options: IsCommandOptions): boolean => {
+  const { botUserId, text } = options
+  return text.startsWith(`<@${botUserId}>`)
 }
 
-// Split on spaces but keep "..." or '...' together
-// https://stackoverflow.com/a/29656458
-const shellArgsRegExp = /"[^"]+"|'[^']+'|\S+/g
+// Split on spaces but keep "...", '...' or `...` together
+const shellArgsRegExp = /"[^"]+"|'[^']+'|`[^`]+`|\S+/g
 const parseShellArgs = (input: string): string[] => {
-  return input.match(shellArgsRegExp) || []
+  return (input.match(shellArgsRegExp) || []).map((arg) => {
+    const firstChar = arg[0] ?? ''
+    const lastChar = arg[arg.length - 1] ?? ''
+    if (firstChar === lastChar && ['"', "'", '`'].includes(firstChar)) {
+      return arg.slice(1, -1)
+    }
+
+    return arg
+  })
 }
 
 type HandleCommandOptions = {
@@ -243,7 +133,7 @@ type HandleCommandOptions = {
 const handleCommand = async (options: HandleCommandOptions) => {
   const { web, action } = options
 
-  const args = parseShellArgs(action.text.replace(cmdPrefix, '').trim())
+  const args = parseShellArgs(action.text.replace(/^<@\w{10,}>/, '').trim())
 
   console.log(args)
 
