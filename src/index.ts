@@ -183,6 +183,30 @@ const addPostItem = async (
     return addHeadingResult
   }
 
+  if (
+    addPostItemResult.before &&
+    addPostItemResult.before?.postId !== addPostItemResult.after.postId
+  ) {
+    // If the postItem was moved from one date to another, we need to update
+    // the original post -- otherwise it will be listed twice in the handover
+
+    const originalPost = await db.getPostById({
+      id: addPostItemResult.before.postId,
+    })
+    if (originalPost instanceof Error) {
+      return originalPost
+    }
+
+    const updateOriginalPostResult = await updateUserPost({
+      web,
+      userId,
+      date: originalPost.date.toISOString(),
+    })
+    if (updateOriginalPostResult instanceof Error) {
+      return updateOriginalPostResult
+    }
+  }
+
   const updateUserPostResult = await updateUserPost({
     web,
     userId,

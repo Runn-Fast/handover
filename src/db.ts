@@ -84,14 +84,39 @@ const updatePost = async (postId: number, data: Prisma.PostUpdateInput) =>
     }),
   )
 
-const upsertPostItem = async (postItem: Prisma.PostItemUncheckedCreateInput) =>
-  errorBoundary(() =>
+type UpsertPostItemResult = {
+  before: PostItem | undefined
+  after: PostItem
+}
+
+const upsertPostItem = async (
+  postItem: Prisma.PostItemUncheckedCreateInput,
+): Promise<UpsertPostItemResult | Error> => {
+  const originalPostItem = await errorBoundary(() =>
+    prisma.postItem.findUnique({
+      where: { channelTs: { channel: postItem.channel, ts: postItem.ts } },
+    }),
+  )
+  if (originalPostItem instanceof Error) {
+    return originalPostItem
+  }
+
+  const upsertResult = await errorBoundary(() =>
     prisma.postItem.upsert({
       create: postItem,
       update: postItem,
       where: { channelTs: { channel: postItem.channel, ts: postItem.ts } },
     }),
   )
+  if (upsertResult instanceof Error) {
+    return upsertResult
+  }
+
+  return {
+    before: originalPostItem ?? undefined,
+    after: upsertResult,
+  }
+}
 
 const getReminder = async (reminder: { userId: string; date: string }) => {
   return errorBoundary(() =>
@@ -141,9 +166,8 @@ type AddPostItemOptions = {
 }
 const addPostItem = async (
   options: AddPostItemOptions,
-): Promise<PostItem | Error> => {
-  const postItem = await upsertPostItem(options)
-  return postItem
+): Promise<UpsertPostItemResult | Error> => {
+  return upsertPostItem(options)
 }
 
 type DeletePostItemOptions = {
@@ -156,6 +180,19 @@ const deletePostItem = async (options: DeletePostItemOptions) => {
   return errorBoundary(() =>
     prisma.postItem.delete({
       where: { channelTs: { channel, ts } },
+    }),
+  )
+}
+
+type GetPostByIdOptions = {
+  id: number
+}
+
+const getPostById = async (options: GetPostByIdOptions) => {
+  const { id } = options
+  return errorBoundary(() =>
+    prisma.post.findUniqueOrThrow({
+      where: { id },
     }),
   )
 }
@@ -235,6 +272,7 @@ export {
   addPost,
   addPostItem,
   deletePostItem,
+  getPostById,
   getPostWithItems,
   upsertFormat,
   updateFormatDeletedAt,
