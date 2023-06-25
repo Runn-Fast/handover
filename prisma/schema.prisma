@@ -11,11 +11,12 @@ datasource db {
 }
 
 model User {
-  id        String   @id
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  name      String
-  timeZone  String
+  id                String   @id
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  name              String
+  timeZone          String
+  dailyReminderTime String?
 
   posts    Post[]
   Reminder Reminder[]

@@ -13,7 +13,7 @@ const schema = z.object({
   HANDOVER_TITLE: z.string(),
   HANDOVER_DAILY_REMINDER_TIME: z
     .string()
-    .regex(/\d\d:\d\d/)
+    .regex(/^\d\d:\d\d$/)
     .default('17:00'),
   OPENAI_API_KEY: z.optional(z.string()),
 })

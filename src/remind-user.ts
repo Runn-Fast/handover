@@ -107,7 +107,10 @@ const checkAndRemindUsers = async (
         })
         const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
 
-        if (userTime >= HANDOVER_DAILY_REMINDER_TIME && !isWeekend) {
+        const dailyReminderTime =
+          user.dailyReminderTime ?? HANDOVER_DAILY_REMINDER_TIME
+
+        if (userTime >= dailyReminderTime && !isWeekend) {
           const post = await db.getPostWithItems({
             userId: user.id,
             date: userDate,

@@ -3,7 +3,9 @@ import { CliCommand } from 'cilly'
 import type { Action } from './types.js'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { setFormat, listFormats, deleteFormat } from './format.js'
+import { updateUserDailyReminderTime, getUserDailyReminderTime } from './db.js'
 import { createShowHelp } from './cilly-show-help.js'
+import { HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
 
 type CreateHandoverCommandOptions = {
   web: WebClient
@@ -92,8 +94,55 @@ const createHandoverCommand = (
       formatCmd.help()
     })
 
+  const remindCmd = new CliCommand('remind')
+    .withDescription('Remind me to post my handover')
+    .withOptions({
+      description: 'Time of day to send the reminder',
+      name: ['-t', '--at'],
+      args: [{ name: 'time' }],
+    })
+    .withHelpHandler(showHelp)
+    .withHandler(async (_args, options) => {
+      const { at: dailyReminderTime } = options
+
+      if (typeof dailyReminderTime === 'string') {
+        const result = await updateUserDailyReminderTime({
+          userId,
+          dailyReminderTime,
+        })
+        if (result instanceof Error) {
+          throw result
+        }
+
+        await publishPrivateContentToSlack({
+          web,
+          userId,
+          text: `Ok, I will remind you each week day at ${dailyReminderTime}`,
+        })
+      } else {
+        const dailyReminderTime = await getUserDailyReminderTime({ userId })
+        if (dailyReminderTime instanceof Error) {
+          throw dailyReminderTime
+        }
+
+        if (dailyReminderTime) {
+          await publishPrivateContentToSlack({
+            web,
+            userId,
+            text: `You will be reminded each week day at ${dailyReminderTime}`,
+          })
+        } else {
+          await publishPrivateContentToSlack({
+            web,
+            userId,
+            text: `You will be reminded each week day at the default time of ${HANDOVER_DAILY_REMINDER_TIME}`,
+          })
+        }
+      }
+    })
+
   const handoverCmd = new CliCommand('handover')
-    .withSubCommands(formatCmd)
+    .withSubCommands(formatCmd, remindCmd)
     .withHelpHandler(showHelp)
     .withHandler(() => {
       formatCmd.help()

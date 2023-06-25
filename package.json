@@ -43,7 +43,7 @@
     "xo": "0.54.2"
   },
   "dependencies": {
-    "@prisma/client": "4.15.0",
+    "@prisma/client": "4.16.1",
     "@slack/bolt": "3.13.1",
     "@slack/web-api": "6.8.1",
     "@stayradiated/error-boundary": "4.1.0",
@@ -54,7 +54,7 @@
     "mem": "9.0.2",
     "openai": "3.3.0",
     "p-queue": "7.3.4",
-    "prisma": "4.15.0",
+    "prisma": "4.16.1",
     "regex-parser": "2.2.11",
     "zod": "3.21.4"
   },

@@ -258,6 +258,56 @@ const getFormatList = async () => {
   )
 }
 
+type UpdateUserDailyReminderTimeOptions = {
+  userId: string
+  dailyReminderTime: string
+}
+
+const updateUserDailyReminderTime = async (
+  options: UpdateUserDailyReminderTimeOptions,
+): Promise<void | Error> => {
+  const { userId, dailyReminderTime } = options
+
+  const isValidTime = /^\d\d:\d\d$/.test(dailyReminderTime)
+  if (!isValidTime) {
+    return new Error('Invalid time, must be in the format HH:MM')
+  }
+
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      dailyReminderTime,
+    },
+  })
+}
+
+type GetUserDailyReminderTimeOptions = {
+  userId: string
+}
+
+const getUserDailyReminderTime = async (
+  options: GetUserDailyReminderTimeOptions,
+): Promise<string | undefined | Error> => {
+  const { userId } = options
+  const user = await errorBoundary(() =>
+    prisma.user.findUniqueOrThrow({
+      where: {
+        id: userId,
+      },
+      select: {
+        dailyReminderTime: true,
+      },
+    }),
+  )
+  if (user instanceof Error) {
+    return user
+  }
+
+  return user.dailyReminderTime ?? undefined
+}
+
 export {
   getUserList,
   getActiveUserList,
@@ -277,6 +327,8 @@ export {
   upsertFormat,
   updateFormatDeletedAt,
   getFormatList,
+  updateUserDailyReminderTime,
+  getUserDailyReminderTime,
 }
 
 export type { PostWithItems }
