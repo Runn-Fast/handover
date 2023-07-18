@@ -8,7 +8,9 @@
 
 Make sure you have pnpm installed globally. If not, run the following command:
 
-`npm install -g pnpm`
+```
+npm install -g pnpm
+```
 
 ## Running
 
