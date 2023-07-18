@@ -71,7 +71,7 @@ jobs:
         run: pnpm run build
 
       - name: Migrate Database
-        run: pnpm run prisma:test db push
+        run: pnpm run prisma db push
 
       - name: Tests
         run: pnpm run test
