@@ -223,6 +223,36 @@ type PostWithItems = Extract<
   Post
 >
 
+type GetPostsWithItemsForPeriod = {
+  userId: string
+  daysBefore: number
+}
+
+const getPostsWithItemsForPeriod = async (
+  options: GetPostsWithItemsForPeriod,
+) => {
+  const { userId, daysBefore } = options
+  const startDate = Date.now() - daysBefore * 24 * 60 * 60 * 1000
+
+  return errorBoundary(() =>
+    prisma.post.findMany({
+      where: {
+        userId,
+        date: {
+          gte: new Date(startDate),
+        },
+      },
+      include: {
+        items: {
+          orderBy: {
+            ts: 'asc',
+          },
+        },
+      },
+    }),
+  )
+}
+
 const upsertFormat = async (format: Prisma.FormatUncheckedCreateInput) => {
   return errorBoundary(() =>
     prisma.format.upsert({
@@ -324,6 +354,7 @@ export {
   deletePostItem,
   getPostById,
   getPostWithItems,
+  getPostsWithItemsForPeriod,
   upsertFormat,
   updateFormatDeletedAt,
   getFormatList,

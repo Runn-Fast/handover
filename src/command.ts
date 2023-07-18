@@ -2,10 +2,20 @@ import type { WebClient } from '@slack/web-api'
 import { CliCommand } from 'cilly'
 import type { Action } from './types.js'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
-import { setFormat, listFormats, deleteFormat } from './format.js'
-import { updateUserDailyReminderTime, getUserDailyReminderTime } from './db.js'
+import {
+  setFormat,
+  listFormats,
+  deleteFormat,
+  getFormatFnList,
+} from './format.js'
+import {
+  updateUserDailyReminderTime,
+  getUserDailyReminderTime,
+  getPostsWithItemsForPeriod,
+} from './db.js'
 import { createShowHelp } from './cilly-show-help.js'
 import { HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
+import { formatPostAsText } from './format-post-as-text.js'
 
 type CreateHandoverCommandOptions = {
   web: WebClient
@@ -141,8 +151,74 @@ const createHandoverCommand = (
       }
     })
 
+  const historyCmd = new CliCommand('history')
+    .withDescription('Fetch a list of previous handover posts')
+    .withOptions({
+      name: ['-d', '--daysBefore'],
+      description: 'Number of days before to fetch handover posts',
+      defaultValue: 7,
+      args: [
+        {
+          name: 'daysBefore',
+          required: false,
+        },
+      ],
+    })
+    .withHelpHandler(showHelp)
+    .withHandler(async (_args, options) => {
+      const { daysBefore } = options
+      const daysBeforeInNumber = parseInt(daysBefore, 10)
+
+      if (daysBeforeInNumber > 30) {
+        await publishPrivateContentToSlack({
+          web,
+          userId,
+          text: "You're pushing it, human. We can't fetch more than 30 days of history!",
+        })
+        return
+      }
+
+      const result = await getPostsWithItemsForPeriod({
+        userId,
+        daysBefore: daysBeforeInNumber,
+      })
+
+      if (result instanceof Error) {
+        throw result
+      }
+
+      if (result.length === 0) {
+        await publishPrivateContentToSlack({
+          web,
+          userId,
+          text: `Check it out! Looks like you had a solid break. We can't find any handover posts in the last ${daysBefore} day(s).`,
+        })
+        return
+      }
+
+      const formatFnList = await getFormatFnList()
+      const text = result
+        .map((post) => {
+          if (post.items.length === 0) {
+            return
+          }
+
+          return `${formatPostAsText({
+            post: { ...post, title: post.date.toLocaleDateString() },
+            formatFnList,
+          })}`
+        })
+        .join('\n')
+
+      await publishPrivateContentToSlack({
+        web,
+        userId,
+        text: `Good stuff! This is what you've been up to in the last ${daysBefore} day(s): \n\n${text}`,
+      })
+    })
+
   const handoverCmd = new CliCommand('handover')
-    .withSubCommands(formatCmd, remindCmd)
+    .withSubCommands(formatCmd, remindCmd, historyCmd)
     .withHelpHandler(showHelp)
     .withHandler(() => {
       formatCmd.help()
