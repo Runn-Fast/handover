@@ -1,6 +1,5 @@
 import * as dateFns from 'date-fns'
 import * as dateFnsTz from 'date-fns-tz'
-import * as chrono from 'chrono-node'
 
 type GetDateFromTsOptions = {
   ts: string
@@ -16,13 +15,12 @@ const getDateFromTs = (options: GetDateFromTsOptions): string => {
   const { ts, timeZone, dayStartsAtHour } = options
 
   // Days start at 3am, allows developers to write handover after midnight
-  const date = dateFns.subHours(
-    dateFns.fromUnixTime(Number.parseInt(ts, 10)),
-    dayStartsAtHour,
-  )
+  const instant = dateFns
+    .subHours(dateFns.fromUnixTime(Number.parseInt(ts, 10)), dayStartsAtHour)
+    .getTime()
 
   const output = formatDateAsISODate({
-    date,
+    instant,
     timeZone,
   })
 
@@ -37,10 +35,10 @@ type GetDateFromMessageOptions = {
 
 const getDateFromMessage = (
   options: GetDateFromMessageOptions,
-): undefined | string => {
+): undefined | string | Error => {
   const { messageText, ts, timeZone } = options
 
-  const instant = dateFns.fromUnixTime(Number.parseInt(ts, 10))
+  const instant = Number.parseInt(ts, 10) * 1000
 
   // Match if text starts with "(date):"
   const match = /^\((.+)\):/.exec(messageText)?.[1]
@@ -48,10 +46,39 @@ const getDateFromMessage = (
     return
   }
 
-  const date = chrono.parseDate(match, {
-    instant,
-    timezone: timeZone,
-  })
+  let date: number
+  switch (match) {
+    case 'today': {
+      date = instant
+      break
+    }
+
+    case '1 day ago':
+    case 'yesterday': {
+      date = dateFns.subDays(instant, 1).getTime()
+      break
+    }
+
+    case '2 days ago': {
+      date = dateFns.subDays(instant, 2).getTime()
+      break
+    }
+
+    case '3 days ago': {
+      date = dateFns.subDays(instant, 3).getTime()
+      break
+    }
+
+    default: {
+      return new Error(`⚠️ Sorry, that date is not supported: "${match}".
+
+Supported dates:
+- today
+- yesterday
+- 2 days ago
+- 3 days ago`)
+    }
+  }
 
   if (date > instant) {
     // Date is in the future, so it's probably a mistake
@@ -59,7 +86,7 @@ const getDateFromMessage = (
   }
 
   const output = formatDateAsISODate({
-    date,
+    instant: date,
     timeZone,
   })
 
@@ -67,37 +94,37 @@ const getDateFromMessage = (
 }
 
 type FormatDateOptions = {
-  date: Date
+  instant: number
   timeZone: string
   format: string
 }
 
 const formatDate = (options: FormatDateOptions): string => {
-  const { date, timeZone, format } = options
-  const dateTime = dateFnsTz.utcToZonedTime(date, timeZone)
+  const { instant, timeZone, format } = options
+  const dateTime = dateFnsTz.utcToZonedTime(instant, timeZone)
   return dateFnsTz.format(dateTime, format, { timeZone })
 }
 
 type FormatDateAsISODate = {
-  date: Date
+  instant: number
   timeZone: string
 }
 
 const formatDateAsISODate = (options: FormatDateAsISODate) => {
-  const { date, timeZone } = options
+  const { instant, timeZone } = options
   return (
-    formatDate({ date, timeZone, format: 'yyyy-MM-dd' }) + 'T00:00:00+00:00'
+    formatDate({ instant, timeZone, format: 'yyyy-MM-dd' }) + 'T00:00:00+00:00'
   )
 }
 
 type FormatDateAsTimeOptions = {
-  date: Date
+  instant: number
   timeZone: string
 }
 
 const formatDateAsTime = (options: FormatDateAsTimeOptions) => {
-  const { date, timeZone } = options
-  return formatDate({ date, timeZone, format: 'HH:mm' })
+  const { instant, timeZone } = options
+  return formatDate({ instant, timeZone, format: 'HH:mm' })
 }
 
 export {

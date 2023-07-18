@@ -8,7 +8,10 @@ import { listenToMessage } from './listen-to-message.js'
 import type { Message, Context } from './types.js'
 import { mapMessageToAction } from './map-message-to-action.js'
 import { formatPostAsText } from './format-post-as-text.js'
-import { publishPublicContentToSlack } from './publish-to-slack.js'
+import {
+  publishPublicContentToSlack,
+  publishPrivateContentToSlack,
+} from './publish-to-slack.js'
 import { getDateFromTs, getDateFromMessage } from './date-utils.js'
 import { checkAndRemindUsers } from './remind-user.js'
 import {
@@ -19,8 +22,8 @@ import {
   PORT,
   SLACK_SIGNING_SECRET,
 } from './constants.js'
-import * as db from './db.js'
-import { isCommand, handleCommand } from './command.js'
+import * as db from './db/index.js'
+import { isCommand, execCommand } from './command/index.js'
 import { getFormatFnList } from './format.js'
 
 type AddHeadingOptions = {
@@ -73,13 +76,13 @@ const addHeading = async (
     const bulkUpdateResult = await errorListBoundary(async () =>
       Promise.all(
         userList.map(async (user): Promise<void | Error> => {
-          const addPostResult = await db.addPost({
+          const upsertPostResult = await db.upsertPost({
             userId: user.id,
             title: user.name,
             date,
           })
-          if (addPostResult instanceof Error) {
-            return addPostResult
+          if (upsertPostResult instanceof Error) {
+            return upsertPostResult
           }
 
           const updateUserResult = await updateUserPost({
@@ -159,7 +162,7 @@ const addPostItem = async (
   options: AddPostItemOptions,
 ): Promise<void | Error> => {
   const { web, userId, postTitle, postDate, channel, ts, text } = options
-  const post = await db.addPost({
+  const post = await db.upsertPost({
     userId,
     title: postTitle,
     date: postDate,
@@ -168,14 +171,14 @@ const addPostItem = async (
     return post
   }
 
-  const addPostItemResult = await db.addPostItem({
+  const postItem = await db.upsertPostItem({
     postId: post.id,
     channel,
     ts,
     text,
   })
-  if (addPostItemResult instanceof Error) {
-    return addPostItemResult
+  if (postItem instanceof Error) {
+    return postItem
   }
 
   const addHeadingResult = await addHeading({ web, date: postDate })
@@ -183,15 +186,12 @@ const addPostItem = async (
     return addHeadingResult
   }
 
-  if (
-    addPostItemResult.before &&
-    addPostItemResult.before?.postId !== addPostItemResult.after.postId
-  ) {
+  if (postItem.before && postItem.before?.postId !== postItem.after.postId) {
     // If the postItem was moved from one date to another, we need to update
     // the original post -- otherwise it will be listed twice in the handover
 
-    const originalPost = await db.getPostById({
-      id: addPostItemResult.before.postId,
+    const originalPost = await db.getPost({
+      id: postItem.before.postId,
     })
     if (originalPost instanceof Error) {
       return originalPost
@@ -281,7 +281,7 @@ const createMessageHandler = (options: CreateMessageHandlerOptions) => {
         text: action.text,
       })
     ) {
-      await handleCommand({ action, web })
+      await execCommand({ action, web })
       return
     }
 
@@ -296,6 +296,14 @@ const createMessageHandler = (options: CreateMessageHandlerOptions) => {
       ts: action.ts,
       timeZone: user.timeZone,
     })
+    if (messageDate instanceof Error) {
+      await publishPrivateContentToSlack({
+        web,
+        userId: action.userId,
+        text: messageDate.message,
+      })
+      return
+    }
 
     const date = messageDate ?? actionDate
 
@@ -337,6 +345,15 @@ const start = async () => {
   const fetchUser = createUserFetcher(web)
 
   const userList = await db.getUserList()
+  if (userList instanceof Error) {
+    console.error(
+      new Error('Could not fetch user list from database', {
+        cause: userList,
+      }),
+    )
+    return
+  }
+
   await Promise.all(
     userList.map(async (user) => {
       const fetchUserResult = await fetchUser(user.id)
@@ -372,6 +389,8 @@ const start = async () => {
     web,
   })
 
+  console.log('Connecting to slack…')
+
   await listenToMessage(slackBoltApp, async (message, context) => {
     const result = await handleMessage(message, context)
     if (result instanceof Error) {
@@ -379,7 +398,7 @@ const start = async () => {
     }
   })
 
-  console.info('Listening to slack messages...')
+  console.info('Connected! Listening to slack messages…')
 
   // Check if there are any users who need reminding to send their handover.
   setInterval(async () => {

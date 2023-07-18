@@ -1,7 +1,11 @@
 import type { Format } from '@prisma/client'
 import parseRegExp from 'regex-parser'
 import * as dateFns from 'date-fns'
-import { upsertFormat, getFormatList, updateFormatDeletedAt } from './db.js'
+import {
+  upsertFormat,
+  getFormatList,
+  updateFormatDeletedAt,
+} from './db/index.js'
 import type { FormatFn } from './types.js'
 
 type SetFormatOptions = {
@@ -18,8 +22,7 @@ const setFormat = async (options: SetFormatOptions): Promise<string> => {
   try {
     parseRegExp(pattern)
   } catch (error) {
-    let errorMessage: string
-    errorMessage =
+    const errorMessage =
       error instanceof Error ? error.message : JSON.stringify(error)
     return `⚠️ Error parsing pattern as Regular Expression:\n${errorMessage}`
   }
@@ -111,7 +114,11 @@ const getFormatFnList = async (): Promise<FormatFn[]> => {
 }
 
 const applyFormatFnList = (text: string, formatFnList: FormatFn[]): string => {
-  return formatFnList.reduce((text, formatFn) => formatFn(text), text)
+  for (const formatFn of formatFnList) {
+    text = formatFn(text)
+  }
+
+  return text
 }
 
 export {

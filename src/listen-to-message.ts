@@ -10,7 +10,7 @@ const listenToMessage = async (
 
   app.event('message', async (event) => {
     const { payload, context } = event
-    queue.add(async () => onMessage(payload, context))
+    await queue.add(async () => onMessage(payload, context))
   })
 
   app.event('reaction_added', async (message) => {

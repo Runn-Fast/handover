@@ -1,11 +1,9 @@
-import type { WebClient } from '@slack/web-api'
 import type {
   ArgumentDefinition,
   CommandDefinition,
   OptionDefinition,
 } from 'cilly'
 import { getNegatedFlag } from 'cilly/dist/tokens/token-parser.js'
-import { publishPrivateContentToSlack } from './publish-to-slack.js'
 
 /*
  * Fork of src/presentation.ts from github.com/cilly-cli/cilly
@@ -89,7 +87,7 @@ const formatSubCommands = (subCommands: CommandDefinition[]): string => {
 }
 
 const formatCommandDefinition = (command: CommandDefinition): string => {
-  let output = `Usage: ${formatCommandUsage(command)}` + '\n\n'
+  let output = `Usage: ${formatCommandUsage(command)}\n\n`
 
   if (command.description) {
     output += command.description + '\n\n'
@@ -106,16 +104,4 @@ const formatCommandDefinition = (command: CommandDefinition): string => {
   return output
 }
 
-const createShowHelp = (web: WebClient, userId: string) => {
-  const showHelp = async (command: CommandDefinition): Promise<void> => {
-    await publishPrivateContentToSlack({
-      web,
-      userId,
-      text: formatCommandDefinition(command),
-    })
-  }
-
-  return showHelp
-}
-
-export { createShowHelp, formatCommandDefinition }
+export { formatCommandDefinition }

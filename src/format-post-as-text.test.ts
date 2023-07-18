@@ -1,6 +1,6 @@
 import { test, expect } from 'vitest'
 import type { PostItem } from '@prisma/client'
-import type { PostWithItems } from './db.js'
+import type { PostWithItems } from './db/index.js'
 import { formatPostAsText } from './format-post-as-text.js'
 
 const post = (title: string, items: PostItem[]): PostWithItems => ({
