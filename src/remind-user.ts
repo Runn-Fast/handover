@@ -5,7 +5,7 @@ import { errorListBoundary } from '@stayradiated/error-boundary'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { formatDateAsISODate, formatDateAsTime } from './date-utils.js'
 import { generateReminder } from './ai.js'
-import * as db from './db.js'
+import * as db from './db/index.js'
 import { HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
 
 const DAYS_SINCE_LAST_POST_CUT_OFF = 7
@@ -35,14 +35,14 @@ const sendReminderToUser = async (
 ): Promise<void | Error> => {
   const { web, user, userDate } = options
 
-  const dateOfLastPostUTC = getLatestPost(user.posts)?.date
+  const dateOfLastPostUTC = getLatestPost(user.posts)?.date.getTime()
 
   const daysSinceLastPost = dateOfLastPostUTC
     ? dateFns.differenceInDays(
         dateFns.parseISO(userDate),
         dateFns.parseISO(
           formatDateAsISODate({
-            date: dateOfLastPostUTC,
+            instant: dateOfLastPostUTC,
             timeZone: user.timeZone,
           }),
         ),
@@ -86,9 +86,9 @@ const checkAndRemindUsers = async (
   options: CheckAndRemindUsersOptions,
 ): Promise<void | Error> => {
   const { web } = options
-  const now = new Date()
+  const instant = Date.now()
   const userList = await db.getActiveUserList({
-    activeSince: dateFns.subDays(now, DAYS_SINCE_LAST_POST_CUT_OFF),
+    activeSince: dateFns.subDays(instant, DAYS_SINCE_LAST_POST_CUT_OFF),
   })
   if (userList instanceof Error) {
     return userList
@@ -98,11 +98,11 @@ const checkAndRemindUsers = async (
     Promise.all(
       userList.map(async (user): Promise<void | Error> => {
         const userTime = formatDateAsTime({
-          date: now,
+          instant,
           timeZone: user.timeZone,
         })
         const userDate = formatDateAsISODate({
-          date: now,
+          instant,
           timeZone: user.timeZone,
         })
         const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
@@ -128,7 +128,8 @@ const checkAndRemindUsers = async (
               return reminder
             }
 
-            if (!reminder || !reminder.ts) {
+            const userHasAlreadyBeenReminded = typeof reminder?.ts === 'string'
+            if (!userHasAlreadyBeenReminded) {
               const sendReminderToUserResult = await sendReminderToUser({
                 web,
                 user,

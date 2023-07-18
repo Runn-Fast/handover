@@ -1,9 +1,19 @@
-import type { PostWithItems } from './db.js'
+import type { PostWithItems } from './db/index.js'
 import type { FormatFn } from './types.js'
 import { applyFormatFnList } from './format.js'
 
 const lineStartsWithBullet = (line: string): boolean => {
-  return /^\s*[•◦▪︎]/.test(line)
+  const bulletList = [
+    8226, // •
+    9702, // ◦
+    9642, // ▪
+  ]
+  const firstCodePoint = line.trimStart().codePointAt(0)
+  if (typeof firstCodePoint !== 'number') {
+    return false
+  }
+
+  return bulletList.includes(firstCodePoint)
 }
 
 type FormatPostAsTextOptions = {
@@ -18,7 +28,7 @@ const formatPostAsText = (options: FormatPostAsTextOptions): string => {
   const lines = items.flatMap((item) =>
     item.text
       .trim()
-      .replace(/^\s*-\s*/gm, '')
+      .replaceAll(/^\s*-\s*/gm, '')
       .split('\n')
       .filter((line) => line.length > 0)
       .map((line) => {

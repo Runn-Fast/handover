@@ -3,7 +3,7 @@ import mem from 'mem'
 import type { User } from '@prisma/client'
 import * as z from 'zod'
 import { errorBoundary } from '@stayradiated/error-boundary'
-import * as db from './db.js'
+import * as db from './db/index.js'
 
 const userInfoSchema = z.object({
   id: z.string(),

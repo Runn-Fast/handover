@@ -1,5 +1,4 @@
 {
-  "__comment": "This typescipt config is managed by `@stayradiated/jsconfig`",
   "compilerOptions": {
     "outDir": "dist",
     "module": "node16",
@@ -30,11 +29,6 @@
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
-    "paths": {
-      "~/*": [
-        "src/*"
-      ]
-    }
+    "baseUrl": "."
   }
 }
