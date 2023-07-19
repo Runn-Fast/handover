@@ -175,7 +175,7 @@ const checkAndRemindUsers = async (
         })
 
         if (reminderNeededToday) {
-          remindUsers({ web, user, userDate })
+          await remindUsers({ web, user, userDate })
         }
       }),
     ),

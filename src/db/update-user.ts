@@ -18,7 +18,7 @@ const updateUser = async (
     }
   }
 
-  return await prisma.user.update({
+  return prisma.user.update({
     where: {
       id: userId,
     },

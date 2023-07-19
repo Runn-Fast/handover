@@ -17,7 +17,7 @@ const createRemindDeleteCmd: CreateCmdFn = (context) => {
     .withArguments({
       name: 'option',
       required: true,
-      description: 'The option to delete: `dayoff`', // we could delete reminder time as well in the future if it's needed
+      description: 'The option to delete: `dayoff`', // We could delete reminder time as well in the future if it's needed
     })
     .withHandler(async (anyArgs) => {
       const { option } = $ReminderDeleteCmdArgs.parse(anyArgs)
@@ -31,12 +31,7 @@ const createRemindDeleteCmd: CreateCmdFn = (context) => {
         })
 
         if (response instanceof Error) {
-          await publishPrivateContentToSlack({
-            web,
-            userId,
-            text: `⚠️ Error:\n${response}`,
-          })
-          return
+          throw response
         }
 
         await publishPrivateContentToSlack({

@@ -1,8 +1,8 @@
-import { test, expect } from 'vitest'
-import { getLatestPost, isReminderNeededToday } from './remind-user.js'
 import { randomUUID } from 'node:crypto'
-import { upsertUser } from './db/upsert-user.js'
+import { test, expect } from 'vitest'
 import { assertOk } from '@stayradiated/error-boundary'
+import { getLatestPost, isReminderNeededToday } from './remind-user.js'
+import { upsertUser } from './db/upsert-user.js'
 
 test('getLatestPost', () => {
   const lastPost = getLatestPost([
@@ -16,7 +16,7 @@ test('getLatestPost', () => {
 })
 
 test('isReminderNeededToday: should return true on weekday', async () => {
-  // arrange
+  // Arrange
   const userId = randomUUID()
   const user = await upsertUser({
     id: userId,
@@ -24,22 +24,22 @@ test('isReminderNeededToday: should return true on weekday', async () => {
     timeZone: 'UTC',
   })
   assertOk(user)
-  const now = new Date('2023-07-18T08:24:00') // weekday
+  const now = new Date('2023-07-18T08:24:00') // Weekday
   const userDate = '2023-07-18'
 
-  // act
+  // Act
   const reminderNeededToday = await isReminderNeededToday({
     user,
     userDate,
     instant: now.getTime(),
   })
 
-  // assert
+  // Assert
   expect(reminderNeededToday).toEqual(true)
 })
 
 test('isReminderNeededToday: should return false on weekend', async () => {
-  // arrange
+  // Arrange
   const userId = randomUUID()
   const user = await upsertUser({
     id: userId,
@@ -47,22 +47,22 @@ test('isReminderNeededToday: should return false on weekend', async () => {
     timeZone: 'UTC',
   })
   assertOk(user)
-  const now = new Date('2023-07-16T08:24:00') // weekend
+  const now = new Date('2023-07-16T08:24:00') // Weekend
   const userDate = '2023-07-16'
 
-  // act
+  // Act
   const reminderNeededToday = await isReminderNeededToday({
     user,
     userDate,
     instant: now.getTime(),
   })
 
-  // assert
+  // Assert
   expect(reminderNeededToday).toEqual(false)
 })
 
 test('isReminderNeededToday: should return false on day off', async () => {
-  // arrange
+  // Arrange
   const userId = randomUUID()
   const user = await upsertUser({
     id: userId,
@@ -71,16 +71,16 @@ test('isReminderNeededToday: should return false on day off', async () => {
     dayOff: 2,
   })
   assertOk(user)
-  const now = new Date('2023-07-18T08:24:00') // weekday
+  const now = new Date('2023-07-18T08:24:00') // Weekday
   const userDate = '2023-07-18'
 
-  // act
+  // Act
   const reminderNeededToday = await isReminderNeededToday({
     user,
     userDate,
     instant: now.getTime(),
   })
 
-  // assert
+  // Assert
   expect(reminderNeededToday).toEqual(false)
 })

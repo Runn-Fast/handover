@@ -3,13 +3,13 @@ import { z } from 'zod'
 import { publishPrivateContentToSlack } from '../../publish-to-slack.js'
 import type { CreateCmdFn } from '../_utils/types.js'
 import { createHelpHandler } from '../_utils/create-help-handler.js'
-import { createRemindDeleteCmd } from './delete/index.js'
 import {
   dailyReminderDefaultHandler,
   dailyReminderTimeUpdateHandler,
   dayOffHandler,
   dayOffValidator,
 } from '../_utils/reminder-handler.js'
+import { createRemindDeleteCmd } from './delete/index.js'
 
 const $RemindCmdOptions = z.object({
   at: z.string().optional(),
@@ -54,11 +54,7 @@ const createRemindCmd: CreateCmdFn = (context) => {
         })
 
         if (error) {
-          await publishPrivateContentToSlack({
-            web,
-            userId,
-            text: `⚠️ ${error}`,
-          })
+          throw error
         }
       }
 
@@ -74,7 +70,7 @@ const createRemindCmd: CreateCmdFn = (context) => {
           return
         }
 
-        dayOffHandler({ userId, dayOff, web })
+        await dayOffHandler({ userId, dayOff, web })
       }
     })
 
