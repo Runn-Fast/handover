@@ -79,6 +79,73 @@ const sendReminderToUser = async (
   }
 }
 
+type IsReminderNeededTodayOptions = {
+  user: User
+  userDate: string
+  instant: number
+}
+
+const isReminderNeededToday = async (
+  options: IsReminderNeededTodayOptions,
+): Promise<boolean> => {
+  const { user, userDate, instant } = options
+
+  const userTime = formatDateAsTime({
+    instant,
+    timeZone: user.timeZone,
+  })
+
+  const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
+  const isDayOff = user.dayOff === dateFns.getDay(instant)
+
+  const dailyReminderTime =
+    user.dailyReminderTime ?? HANDOVER_DAILY_REMINDER_TIME
+
+  return userTime >= dailyReminderTime && !isWeekend && !isDayOff
+}
+
+type RemindUsersOptions = {
+  web: WebClient
+  user: User & { posts: Post[] }
+  userDate: string
+}
+
+const remindUsers = async (
+  options: RemindUsersOptions,
+): Promise<void | Error> => {
+  const { user, userDate, web } = options
+
+  const post = await db.getPostWithItems({
+    userId: user.id,
+    date: userDate,
+  })
+  if (post instanceof Error) {
+    return post
+  }
+
+  if (!post || post.items.length === 0) {
+    const reminder = await db.getReminder({
+      userId: user.id,
+      date: userDate,
+    })
+    if (reminder instanceof Error) {
+      return reminder
+    }
+
+    const userHasAlreadyBeenReminded = typeof reminder?.ts === 'string'
+    if (!userHasAlreadyBeenReminded) {
+      const sendReminderToUserResult = await sendReminderToUser({
+        web,
+        user,
+        userDate,
+      })
+      if (sendReminderToUserResult instanceof Error) {
+        return sendReminderToUserResult
+      }
+    }
+  }
+}
+
 type CheckAndRemindUsersOptions = {
   web: WebClient
 }
@@ -97,49 +164,18 @@ const checkAndRemindUsers = async (
   const result = await errorListBoundary(async () =>
     Promise.all(
       userList.map(async (user): Promise<void | Error> => {
-        const userTime = formatDateAsTime({
-          instant,
-          timeZone: user.timeZone,
-        })
         const userDate = formatDateAsISODate({
           instant,
           timeZone: user.timeZone,
         })
-        const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
+        const reminderNeededToday = await isReminderNeededToday({
+          user,
+          userDate,
+          instant,
+        })
 
-        const dailyReminderTime =
-          user.dailyReminderTime ?? HANDOVER_DAILY_REMINDER_TIME
-
-        if (userTime >= dailyReminderTime && !isWeekend) {
-          const post = await db.getPostWithItems({
-            userId: user.id,
-            date: userDate,
-          })
-          if (post instanceof Error) {
-            return post
-          }
-
-          if (!post || post.items.length === 0) {
-            const reminder = await db.getReminder({
-              userId: user.id,
-              date: userDate,
-            })
-            if (reminder instanceof Error) {
-              return reminder
-            }
-
-            const userHasAlreadyBeenReminded = typeof reminder?.ts === 'string'
-            if (!userHasAlreadyBeenReminded) {
-              const sendReminderToUserResult = await sendReminderToUser({
-                web,
-                user,
-                userDate,
-              })
-              if (sendReminderToUserResult instanceof Error) {
-                return sendReminderToUserResult
-              }
-            }
-          }
+        if (reminderNeededToday) {
+          remindUsers({ web, user, userDate })
         }
       }),
     ),
@@ -149,4 +185,9 @@ const checkAndRemindUsers = async (
   }
 }
 
-export { sendReminderToUser, checkAndRemindUsers, getLatestPost }
+export {
+  sendReminderToUser,
+  checkAndRemindUsers,
+  getLatestPost,
+  isReminderNeededToday,
+}
