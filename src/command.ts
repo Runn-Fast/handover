@@ -5,11 +5,12 @@ import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { setFormat, listFormats, deleteFormat } from './format.js'
 import { createShowHelp } from './cilly-show-help.js'
 import {
-  dailyReminderTimeDefaultHandler,
+  dailyReminderDefaultHandler,
   dailyReminderTimeUpdateHandler,
   dayOffHandler,
   dayOffValidator,
 } from './command-handler.js'
+import { deleteUserDailyReminderDayOff } from './db.js'
 
 type CreateHandoverCommandOptions = {
   web: WebClient
@@ -98,7 +99,29 @@ const createHandoverCommand = (
       formatCmd.help()
     })
 
+  const deleteDayOffCmd = new CliCommand('deleteDayOff')
+    .withHelpHandler(showHelp)
+    .withHandler(async (_args) => {
+      const response = await deleteUserDailyReminderDayOff({ userId })
+
+      if (response instanceof Error) {
+        await publishPrivateContentToSlack({
+          web,
+          userId,
+          text: `⚠️ Error:\n${response}`,
+        })
+        return
+      }
+
+      await publishPrivateContentToSlack({
+        web,
+        userId,
+        text: '✅ Your day off has been deleted successfully. No worries!',
+      })
+    })
+
   const remindCmd = new CliCommand('remind')
+    .withSubCommands(deleteDayOffCmd)
     .withDescription('Remind me to post my handover')
     .withHelpHandler(showHelp)
     .withOptions(
@@ -118,7 +141,7 @@ const createHandoverCommand = (
       const { at: dailyReminderTime, dayOff } = options
 
       if (!dailyReminderTime && !dayOff) {
-        await dailyReminderTimeDefaultHandler({ userId, web })
+        await dailyReminderDefaultHandler({ userId, web })
         return
       }
 

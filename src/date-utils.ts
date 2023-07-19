@@ -1,6 +1,7 @@
 import * as dateFns from 'date-fns'
 import * as dateFnsTz from 'date-fns-tz'
 import * as chrono from 'chrono-node'
+import { format } from 'date-fns'
 
 type GetDateFromTsOptions = {
   ts: string
@@ -100,10 +101,14 @@ const formatDateAsTime = (options: FormatDateAsTimeOptions) => {
   return formatDate({ date, timeZone, format: 'HH:mm' })
 }
 
+const formatDayName = (day: number) =>
+  format(new Date(2023, 0, day + 1), 'EEEE')
+
 export {
   getDateFromTs,
   getDateFromMessage,
   formatDate,
   formatDateAsTime,
   formatDateAsISODate,
+  formatDayName,
 }

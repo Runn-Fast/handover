@@ -335,6 +335,56 @@ const updateUserReminderDayOff = async (
   }
 }
 
+type GetUserDailyReminderDayOffOptions = {
+  userId: string
+}
+
+const getUserDailyReminderDayOff = async (
+  options: GetUserDailyReminderDayOffOptions,
+): Promise<number | undefined | Error> => {
+  const { userId } = options
+  const user = await errorBoundary(() =>
+    prisma.user.findUniqueOrThrow({
+      where: {
+        id: userId,
+      },
+      select: {
+        dayOff: true,
+      },
+    }),
+  )
+  if (user instanceof Error) {
+    return user
+  }
+
+  return user.dayOff ?? undefined
+}
+
+type DeleteUserDailyReminderDayOffOptions = {
+  userId: string
+}
+
+const deleteUserDailyReminderDayOff = async (
+  options: DeleteUserDailyReminderDayOffOptions,
+): Promise<number | undefined | Error> => {
+  const { userId } = options
+  const user = await errorBoundary(() =>
+    prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        dayOff: null,
+      },
+    }),
+  )
+  if (user instanceof Error) {
+    return user
+  }
+
+  return user.dayOff ?? undefined
+}
+
 export {
   getUserList,
   getActiveUserList,
@@ -357,6 +407,8 @@ export {
   updateUserDailyReminderTime,
   getUserDailyReminderTime,
   updateUserReminderDayOff,
+  getUserDailyReminderDayOff,
+  deleteUserDailyReminderDayOff,
 }
 
 export type { PostWithItems }

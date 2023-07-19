@@ -1,38 +1,48 @@
 import type { WebClient } from '@slack/web-api'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import {
+  getUserDailyReminderDayOff,
   getUserDailyReminderTime,
   updateUserDailyReminderTime,
   updateUserReminderDayOff,
 } from './db.js'
-import { Day, format } from 'date-fns'
+import { Day } from 'date-fns'
 import { HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
+import { formatDayName } from './date-utils.js'
 
-type DailyReminderTimeDefaultHandler = {
+type DailyReminderDefaultHandler = {
   userId: string
   web: WebClient
 }
 
-const dailyReminderTimeDefaultHandler = async ({
+const dailyReminderDefaultHandler = async ({
   userId,
   web,
-}: DailyReminderTimeDefaultHandler): Promise<void | Error> => {
+}: DailyReminderDefaultHandler): Promise<void | Error> => {
   const dailyReminderTime = await getUserDailyReminderTime({ userId })
+  const dayOff = await getUserDailyReminderDayOff({ userId })
+
+  if (dayOff instanceof Error) {
+    return dayOff
+  }
+
   if (dailyReminderTime instanceof Error) {
     return dailyReminderTime
   }
+
+  const dayOffText = `${dayOff ? `except on ${formatDayName(dayOff)}` : ''}`
 
   if (dailyReminderTime) {
     await publishPrivateContentToSlack({
       web,
       userId,
-      text: `You will be reminded each week day at ${dailyReminderTime}`,
+      text: `You will be reminded each week day at ${dailyReminderTime} ${dayOffText}`,
     })
   } else {
     await publishPrivateContentToSlack({
       web,
       userId,
-      text: `You will be reminded each week day at the default time of ${HANDOVER_DAILY_REMINDER_TIME}`,
+      text: `You will be reminded each week day at the default time of ${HANDOVER_DAILY_REMINDER_TIME} ${dayOffText}`,
     })
   }
 }
@@ -93,17 +103,18 @@ const dayOffHandler = async ({ userId, dayOff, web }: DayOffHandler) => {
     throw Error
   }
 
-  const dayName = format(new Date(2023, 0, dayOffResult + 1), 'EEEE')
   await publishPrivateContentToSlack({
     web,
     userId,
-    text: `✅ Updated! We'll leave you in peace every ${dayName}`,
+    text: `✅ Updated! We'll leave you in peace every ${formatDayName(
+      dayOffResult,
+    )}`,
   })
 }
 
 export {
   dayOffValidator,
   dayOffHandler,
-  dailyReminderTimeDefaultHandler,
+  dailyReminderDefaultHandler,
   dailyReminderTimeUpdateHandler,
 }
