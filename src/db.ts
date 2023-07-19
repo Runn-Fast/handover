@@ -1,6 +1,7 @@
 import type { Prisma, Post, PostItem } from '@prisma/client'
 import pkg from '@prisma/client'
 import { errorBoundary } from '@stayradiated/error-boundary'
+import { Day } from 'date-fns'
 
 const { PrismaClient } = pkg
 const prisma = new PrismaClient()
@@ -308,6 +309,32 @@ const getUserDailyReminderTime = async (
   return user.dailyReminderTime ?? undefined
 }
 
+type UpdateUserReminderDayOffOptions = {
+  userId: string
+  dayOff: number
+}
+
+const updateUserReminderDayOff = async (
+  options: UpdateUserReminderDayOffOptions,
+): Promise<Day | Error> => {
+  const { userId, dayOff } = options
+
+  try {
+    const user = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        dayOff,
+      },
+    })
+
+    return user.dayOff as Day
+  } catch (error) {
+    throw error
+  }
+}
+
 export {
   getUserList,
   getActiveUserList,
@@ -329,6 +356,7 @@ export {
   getFormatList,
   updateUserDailyReminderTime,
   getUserDailyReminderTime,
+  updateUserReminderDayOff,
 }
 
 export type { PostWithItems }

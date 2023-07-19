@@ -3,9 +3,13 @@ import { CliCommand } from 'cilly'
 import type { Action } from './types.js'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { setFormat, listFormats, deleteFormat } from './format.js'
-import { updateUserDailyReminderTime, getUserDailyReminderTime } from './db.js'
 import { createShowHelp } from './cilly-show-help.js'
-import { HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
+import {
+  dailyReminderTimeDefaultHandler,
+  dailyReminderTimeUpdateHandler,
+  dayOffHandler,
+  dayOffValidator,
+} from './command-handler.js'
 
 type CreateHandoverCommandOptions = {
   web: WebClient
@@ -96,48 +100,57 @@ const createHandoverCommand = (
 
   const remindCmd = new CliCommand('remind')
     .withDescription('Remind me to post my handover')
-    .withOptions({
-      description: 'Time of day to send the reminder',
-      name: ['-t', '--at'],
-      args: [{ name: 'time' }],
-    })
     .withHelpHandler(showHelp)
+    .withOptions(
+      {
+        description: 'Time of day to send the reminder',
+        name: ['-t', '--at'],
+        args: [{ name: 'time' }],
+      },
+      {
+        description:
+          'Specify your day off to snooze the reminder ( 1 | 2 | 3 | 4 | 5 ) where 1 is Monday',
+        name: ['-d', '--day-off'],
+        args: [{ name: 'dayOff' }],
+      },
+    )
     .withHandler(async (_args, options) => {
-      const { at: dailyReminderTime } = options
+      const { at: dailyReminderTime, dayOff } = options
 
-      if (typeof dailyReminderTime === 'string') {
-        const result = await updateUserDailyReminderTime({
+      if (!dailyReminderTime && !dayOff) {
+        await dailyReminderTimeDefaultHandler({ userId, web })
+        return
+      }
+
+      if (dailyReminderTime && typeof dailyReminderTime === 'string') {
+        const error = await dailyReminderTimeUpdateHandler({
           userId,
           dailyReminderTime,
-        })
-        if (result instanceof Error) {
-          throw result
-        }
-
-        await publishPrivateContentToSlack({
           web,
-          userId,
-          text: `Ok, I will remind you each week day at ${dailyReminderTime}`,
         })
-      } else {
-        const dailyReminderTime = await getUserDailyReminderTime({ userId })
-        if (dailyReminderTime instanceof Error) {
-          throw dailyReminderTime
+
+        if (error) {
+          await publishPrivateContentToSlack({
+            web,
+            userId,
+            text: `⚠️ ${error}`,
+          })
+        }
+      }
+
+      if (dayOff) {
+        const result = dayOffValidator(dayOff)
+
+        if (typeof result === 'string') {
+          await publishPrivateContentToSlack({
+            web,
+            userId,
+            text: `⚠️ ${result}`,
+          })
+          return
         }
 
-        if (dailyReminderTime) {
-          await publishPrivateContentToSlack({
-            web,
-            userId,
-            text: `You will be reminded each week day at ${dailyReminderTime}`,
-          })
-        } else {
-          await publishPrivateContentToSlack({
-            web,
-            userId,
-            text: `You will be reminded each week day at the default time of ${HANDOVER_DAILY_REMINDER_TIME}`,
-          })
-        }
+        dayOffHandler({ userId, dayOff, web })
       }
     })
 

@@ -17,6 +17,7 @@ model User {
   name              String
   timeZone          String
   dailyReminderTime String?
+  dayOff            Int?
 
   posts    Post[]
   Reminder Reminder[]
