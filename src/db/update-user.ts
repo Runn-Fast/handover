@@ -1,27 +1,28 @@
+import { Prisma, User } from '@prisma/client'
 import { prisma } from './prisma.js'
 
 type UpdateUserOptions = {
   userId: string
-  dailyReminderTime: string
+  data: Prisma.UserUpdateInput
 }
 
 const updateUser = async (
   options: UpdateUserOptions,
-): Promise<void | Error> => {
-  const { userId, dailyReminderTime } = options
+): Promise<User | Error> => {
+  const { userId, data } = options
 
-  const isValidTime = /^\d\d:\d\d$/.test(dailyReminderTime)
-  if (!isValidTime) {
-    return new Error('Invalid time, must be in the format HH:MM')
+  if (data.dailyReminderTime && typeof data.dailyReminderTime === 'string') {
+    const isValidTime = /^\d\d:\d\d$/.test(data.dailyReminderTime)
+    if (!isValidTime) {
+      return new Error('Invalid time, must be in the format HH:MM')
+    }
   }
 
-  await prisma.user.update({
+  return prisma.user.update({
     where: {
       id: userId,
     },
-    data: {
-      dailyReminderTime,
-    },
+    data,
   })
 }
 

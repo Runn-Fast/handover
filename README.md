@@ -58,6 +58,16 @@ pnpm prisma:test db push
 pnpm run test
 ```
 
+## DB migration
+
+1. Update the `schema.prisma` file (for more details about Prisma Schema, please visit [Prisma Docs](https://www.prisma.io/docs/concepts/components/prisma-schema))
+
+2. To create and run a new migration automatically for applying schema changes, run the following command:
+
+```shell
+pnpm prisma migrate dev --name=[name for migration]
+```
+
 ## Troubleshooting
 
 For any questions or discussions, please flick a message on #dev-handover
