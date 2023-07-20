@@ -1,4 +1,4 @@
-import { WebClient } from '@slack/web-api'
+import type { WebClient } from '@slack/web-api'
 import { publishPrivateContentToSlack } from '../../publish-to-slack.js'
 import { formatDayNames } from '../../date-utils.js'
 

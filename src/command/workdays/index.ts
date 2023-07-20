@@ -1,10 +1,10 @@
 import { CliCommand } from 'cilly'
 import type { CreateCmdFn } from '../_utils/types.js'
 import { createHelpHandler } from '../_utils/create-help-handler.js'
+import { getUser } from '../../db/get-user.js'
 import { createWorkdaysOnCmd } from './on/index.js'
 import { createWorkdaysOffCmd } from './off/index.js'
 import { defaultResponse } from './response.js'
-import { getUser } from '../../db/get-user.js'
 
 const createWorkdaysCmd: CreateCmdFn = (context) => {
   const workdaysOnCmd = createWorkdaysOnCmd(context)
@@ -21,7 +21,7 @@ const createWorkdaysCmd: CreateCmdFn = (context) => {
         throw user
       }
 
-      defaultResponse({ web, userId, workdays: user.workdays })
+      await defaultResponse({ web, userId, workdays: user.workdays })
     })
 
   return workdaysCmd

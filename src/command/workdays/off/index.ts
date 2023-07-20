@@ -3,7 +3,7 @@ import { z } from 'zod'
 import pullAll from 'lodash/pullAll.js'
 import type { CreateCmdFn } from '../../_utils/types.js'
 import { createHelpHandler } from '../../_utils/create-help-handler.js'
-import validators from '../validators.js'
+import { isValidDay } from '../validators.js'
 import { updateUser } from '../../../db/update-user.js'
 import { dayNamesMap } from '../../../date-utils.js'
 import { getUser } from '../../../db/get-user.js'
@@ -22,7 +22,7 @@ const createWorkdaysOffCmd: CreateCmdFn = (context) => {
       name: 'days',
       required: true,
       variadic: true,
-      validator: (days) => validators.isValidDay(days),
+      validator: (days: string[]) => isValidDay(days),
     })
     .withHandler(async (anyArgs) => {
       const { days } = $WorkdaysOffCmdArgs.parse(anyArgs)
@@ -48,7 +48,7 @@ const createWorkdaysOffCmd: CreateCmdFn = (context) => {
       }
 
       if (user.workdays) {
-        updateResponse({ web, userId, workdays: user.workdays })
+        await updateResponse({ web, userId, workdays: user.workdays })
       }
     })
 

@@ -1,4 +1,4 @@
-import { Prisma, User } from '@prisma/client'
+import type { Prisma, User } from '@prisma/client'
 import { prisma } from './prisma.js'
 
 type UpdateUserOptions = {

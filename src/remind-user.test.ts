@@ -25,7 +25,7 @@ test('isReminderNeededToday: should return true on workday', async () => {
     workdays: [1, 2],
   })
   assertOk(user)
-  const now = new Date('2023-07-18T08:24:00') // weekday 2
+  const now = new Date('2023-07-18T08:24:00') // Weekday 2
   const userDate = '2023-07-18'
 
   // Act
@@ -49,7 +49,7 @@ test('isReminderNeededToday: should return false on day off', async () => {
     workdays: [1, 2],
   })
   assertOk(user)
-  const now = new Date('2023-07-16T08:24:00') // weekday 0
+  const now = new Date('2023-07-16T08:24:00') // Weekday 0
   const userDate = '2023-07-16'
 
   // Act
