@@ -1,5 +1,18 @@
 import * as dateFns from 'date-fns'
 import * as dateFnsTz from 'date-fns-tz'
+import { format } from 'date-fns'
+import initial from 'lodash/initial.js'
+import last from 'lodash/last.js'
+
+const dayNamesMap = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+}
 
 type GetDateFromTsOptions = {
   ts: string
@@ -127,10 +140,26 @@ const formatDateAsTime = (options: FormatDateAsTimeOptions) => {
   return formatDate({ instant, timeZone, format: 'HH:mm' })
 }
 
+const formatDayName = (day: number) =>
+  format(new Date(2023, 0, day + 1), 'EEEE')
+
+const formatDayNames = (days: number[]) => {
+  const dayNames = days.map((day) => formatDayName(day))
+
+  if (dayNames.length === 1) {
+    return dayNames[0]
+  }
+
+  return initial(dayNames).join(', ') + ' and ' + last(dayNames)
+}
+
 export {
+  dayNamesMap,
   getDateFromTs,
   getDateFromMessage,
   formatDate,
   formatDateAsTime,
   formatDateAsISODate,
+  formatDayName,
+  formatDayNames,
 }
