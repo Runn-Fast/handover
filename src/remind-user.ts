@@ -6,7 +6,8 @@ import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { formatDateAsISODate, formatDateAsTime } from './date-utils.js'
 import { generateReminder } from './ai.js'
 import * as db from './db/index.js'
-import { HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
+import { HANDOVER_CHANNEL, HANDOVER_DAILY_REMINDER_TIME } from './constants.js'
+import { addPostItem } from './actions.js'
 
 const DAYS_SINCE_LAST_POST_CUT_OFF = 7
 
@@ -82,18 +83,13 @@ const sendReminderToUser = async (
 type IsReminderNeededTodayOptions = {
   user: User
   userDate: string
-  instant: number
+  userTime: string
 }
 
 const isReminderNeededToday = async (
   options: IsReminderNeededTodayOptions,
 ): Promise<boolean> => {
-  const { user, userDate, instant } = options
-
-  const userTime = formatDateAsTime({
-    instant,
-    timeZone: user.timeZone,
-  })
+  const { user, userDate, userTime } = options
 
   const isWorkday = user.workdays.includes(dateFns.parseISO(userDate).getDay())
 
@@ -156,6 +152,7 @@ const checkAndRemindUsers = async (
   const userList = await db.getActiveUserList({
     activeSince: dateFns.subDays(instant, DAYS_SINCE_LAST_POST_CUT_OFF),
   })
+
   if (userList instanceof Error) {
     return userList
   }
@@ -167,14 +164,29 @@ const checkAndRemindUsers = async (
           instant,
           timeZone: user.timeZone,
         })
+        const userTime = formatDateAsTime({
+          instant,
+          timeZone: user.timeZone,
+        })
+
         const reminderNeededToday = await isReminderNeededToday({
           user,
           userDate,
-          instant,
+          userTime,
         })
 
         if (reminderNeededToday) {
           await remindUsers({ web, user, userDate })
+        } else {
+          await addPostItem({
+            web,
+            userId: user.id,
+            postDate: userDate,
+            postTitle: user.name,
+            channel: HANDOVER_CHANNEL,
+            ts: userTime,
+            text: `🫥 ${user.name} is not working today 🫥`,
+          })
         }
       }),
     ),
