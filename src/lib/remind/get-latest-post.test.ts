@@ -1,5 +1,5 @@
 import { test, expect } from 'vitest'
-import { getLatestPost } from './remind-user.js'
+import { getLatestPost } from './get-latest-post.js'
 
 test('getLatestPost', () => {
   const lastPost = getLatestPost([
