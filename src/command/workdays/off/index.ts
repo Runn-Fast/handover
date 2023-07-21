@@ -22,8 +22,7 @@ const createWorkdaysOffCmd: CreateCmdFn = (context) => {
       variadic: true,
     })
     .withHandler(async (anyArgs) => {
-      const { days } = $WorkdaysOffCmdArgs.parse(anyArgs)
-      const workdaysToDrop = days as number[]
+      const { days: workdaysToDrop } = $WorkdaysOffCmdArgs.parse(anyArgs)
 
       const user = await getUser({ userId })
       if (user instanceof Error) {
