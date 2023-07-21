@@ -7,7 +7,7 @@ import type { CreateCmdFn } from '../_utils/types.js'
 import { createHelpHandler } from '../_utils/create-help-handler.js'
 
 const $RemindCmdOptions = z.object({
-  at: z.string(),
+  at: z.string().optional(),
 })
 
 const createRemindCmd: CreateCmdFn = (context) => {
@@ -27,7 +27,9 @@ const createRemindCmd: CreateCmdFn = (context) => {
       if (typeof dailyReminderTime === 'string') {
         const result = await updateUser({
           userId,
-          dailyReminderTime,
+          data: {
+            dailyReminderTime,
+          },
         })
         if (result instanceof Error) {
           throw result

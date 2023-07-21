@@ -17,6 +17,7 @@ model User {
   name              String
   timeZone          String
   dailyReminderTime String?
+  workdays          Int[]    @default([1, 2, 3, 4, 5])
 
   posts    Post[]
   Reminder Reminder[]

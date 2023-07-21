@@ -1,5 +1,11 @@
 import { describe, test, expect } from 'vitest'
-import { getDateFromTs, getDateFromMessage } from './date-utils.js'
+import {
+  getDateFromTs,
+  getDateFromMessage,
+  formatDayOfWeek,
+  formatDayOfWeekList,
+  parseDayOfWeek,
+} from './date-utils.js'
 
 const formatTs = (date: Date): string => (date.getTime() / 1000).toString()
 
@@ -67,5 +73,88 @@ describe('GetDateFromTsOptions', () => {
       timeZone: 'Pacific/Auckland',
     })
     expect(dateString).toEqual('2023-07-15T00:00:00+00:00')
+  })
+})
+
+describe('formatDayOfWeek', () => {
+  test('each day of week', () => {
+    expect(formatDayOfWeek(0)).toEqual('Sunday')
+    expect(formatDayOfWeek(1)).toEqual('Monday')
+    expect(formatDayOfWeek(2)).toEqual('Tuesday')
+    expect(formatDayOfWeek(3)).toEqual('Wednesday')
+    expect(formatDayOfWeek(4)).toEqual('Thursday')
+    expect(formatDayOfWeek(5)).toEqual('Friday')
+    expect(formatDayOfWeek(6)).toEqual('Saturday')
+  })
+})
+
+describe('formatDayOfWeekList', () => {
+  test('1 day', () => {
+    expect(formatDayOfWeekList([0])).toEqual('Sunday')
+    expect(formatDayOfWeekList([1])).toEqual('Monday')
+    expect(formatDayOfWeekList([2])).toEqual('Tuesday')
+    expect(formatDayOfWeekList([3])).toEqual('Wednesday')
+    expect(formatDayOfWeekList([4])).toEqual('Thursday')
+    expect(formatDayOfWeekList([5])).toEqual('Friday')
+    expect(formatDayOfWeekList([6])).toEqual('Saturday')
+  })
+
+  test('2 days', () => {
+    expect(formatDayOfWeekList([0, 1])).toEqual('Sunday and Monday')
+    expect(formatDayOfWeekList([1, 2])).toEqual('Monday and Tuesday')
+    expect(formatDayOfWeekList([2, 3])).toEqual('Tuesday and Wednesday')
+    expect(formatDayOfWeekList([3, 4])).toEqual('Wednesday and Thursday')
+    expect(formatDayOfWeekList([4, 5])).toEqual('Thursday and Friday')
+    expect(formatDayOfWeekList([5, 6])).toEqual('Friday and Saturday')
+    expect(formatDayOfWeekList([6, 0])).toEqual('Saturday and Sunday')
+  })
+
+  test('3 days', () => {
+    expect(formatDayOfWeekList([0, 1, 2])).toEqual('Sunday, Monday and Tuesday')
+    expect(formatDayOfWeekList([1, 2, 3])).toEqual(
+      'Monday, Tuesday and Wednesday',
+    )
+    expect(formatDayOfWeekList([2, 3, 4])).toEqual(
+      'Tuesday, Wednesday and Thursday',
+    )
+    expect(formatDayOfWeekList([3, 4, 5])).toEqual(
+      'Wednesday, Thursday and Friday',
+    )
+    expect(formatDayOfWeekList([4, 5, 6])).toEqual(
+      'Thursday, Friday and Saturday',
+    )
+    expect(formatDayOfWeekList([5, 6, 0])).toEqual(
+      'Friday, Saturday and Sunday',
+    )
+  })
+
+  test('4 days', () => {
+    expect(formatDayOfWeekList([0, 1, 2, 3])).toEqual(
+      'Sunday, Monday, Tuesday and Wednesday',
+    )
+    expect(formatDayOfWeekList([1, 2, 3, 4])).toEqual(
+      'Monday, Tuesday, Wednesday and Thursday',
+    )
+    expect(formatDayOfWeekList([2, 3, 4, 5])).toEqual(
+      'Tuesday, Wednesday, Thursday and Friday',
+    )
+    expect(formatDayOfWeekList([3, 4, 5, 6])).toEqual(
+      'Wednesday, Thursday, Friday and Saturday',
+    )
+    expect(formatDayOfWeekList([4, 5, 6, 0])).toEqual(
+      'Thursday, Friday, Saturday and Sunday',
+    )
+  })
+})
+
+describe('parseDayOfWeek', () => {
+  test('each day of week', () => {
+    expect(parseDayOfWeek('Sunday')).toEqual(0)
+    expect(parseDayOfWeek('Monday')).toEqual(1)
+    expect(parseDayOfWeek('Tuesday')).toEqual(2)
+    expect(parseDayOfWeek('Wednesday')).toEqual(3)
+    expect(parseDayOfWeek('Thursday')).toEqual(4)
+    expect(parseDayOfWeek('Friday')).toEqual(5)
+    expect(parseDayOfWeek('Saturday')).toEqual(6)
   })
 })

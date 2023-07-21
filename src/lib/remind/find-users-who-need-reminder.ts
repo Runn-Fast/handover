@@ -4,6 +4,7 @@ import { errorListBoundary } from '@stayradiated/error-boundary'
 import { formatDateAsISODate, formatDateAsTime } from '../../date-utils.js'
 import * as db from '../../db/index.js'
 import type { UserWithPosts } from '../../db/index.js'
+import { isReminderNeeded } from './is-reminder-needed.js'
 
 type FindUsersWhoNeedReminderOptions = {
   daysSinceLastPostCutOff: number
@@ -34,12 +35,15 @@ const findUsersWhoNeedReminder = async (
           instant,
           timeZone: user.timeZone,
         })
-        const isWeekend = dateFns.isWeekend(dateFns.parseISO(userDate))
 
-        const dailyReminderTime =
-          user.dailyReminderTime ?? defaultDailyReminderTime
+        const reminderNeeded = await isReminderNeeded({
+          userWorkdays: user.workdays,
+          userDate,
+          userTime,
+          dailyReminderTime: user.dailyReminderTime ?? defaultDailyReminderTime,
+        })
 
-        if (userTime >= dailyReminderTime && !isWeekend) {
+        if (reminderNeeded) {
           const post = await db.getPostWithItems({
             userId: user.id,
             date: dateFns.parseISO(userDate),
