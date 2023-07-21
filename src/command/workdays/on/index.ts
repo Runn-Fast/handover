@@ -2,13 +2,12 @@ import { CliCommand } from 'cilly'
 import { z } from 'zod'
 import type { CreateCmdFn } from '../../_utils/types.js'
 import { createHelpHandler } from '../../_utils/create-help-handler.js'
-import { isValidDay } from '../validators.js'
+import { $DayOfWeek } from '../validators.js'
 import { updateUser } from '../../../db/update-user.js'
-import { dayNamesMap } from '../../../date-utils.js'
 import { updateResponse } from '../response.js'
 
 const $WorkdaysOnCmdArgs = z.object({
-  days: z.string().array(),
+  days: z.array($DayOfWeek),
 })
 
 const createWorkdaysOnCmd: CreateCmdFn = (context) => {
@@ -20,13 +19,10 @@ const createWorkdaysOnCmd: CreateCmdFn = (context) => {
       name: 'days',
       required: true,
       variadic: true,
-      validator: (days: string[]) => isValidDay(days),
     })
     .withHandler(async (anyArgs) => {
       const { days } = $WorkdaysOnCmdArgs.parse(anyArgs)
-      const workdays = days.map(
-        (day) => dayNamesMap[day.toLowerCase() as keyof typeof dayNamesMap],
-      )
+      const workdays = days as number[]
 
       const user = await updateUser({
         userId,

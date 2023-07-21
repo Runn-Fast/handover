@@ -1,18 +1,5 @@
 import * as dateFns from 'date-fns'
 import * as dateFnsTz from 'date-fns-tz'
-import { format } from 'date-fns'
-import initial from 'lodash/initial.js'
-import last from 'lodash/last.js'
-
-const dayNamesMap = {
-  sunday: 0,
-  monday: 1,
-  tuesday: 2,
-  wednesday: 3,
-  thursday: 4,
-  friday: 5,
-  saturday: 6,
-}
 
 type GetDateFromTsOptions = {
   ts: string
@@ -140,26 +127,99 @@ const formatDateAsTime = (options: FormatDateAsTimeOptions) => {
   return formatDate({ instant, timeZone, format: 'HH:mm' })
 }
 
-const formatDayName = (day: number) =>
-  format(new Date(2023, 0, day + 1), 'EEEE')
+const formatDayOfWeek = (day: number): string => {
+  switch (day) {
+    case 0: {
+      return 'Sunday'
+    }
 
-const formatDayNames = (days: number[]) => {
-  const dayNames = days.map((day) => formatDayName(day))
+    case 1: {
+      return 'Monday'
+    }
 
-  if (dayNames.length === 1) {
-    return dayNames[0]
+    case 2: {
+      return 'Tuesday'
+    }
+
+    case 3: {
+      return 'Wednesday'
+    }
+
+    case 4: {
+      return 'Thursday'
+    }
+
+    case 5: {
+      return 'Friday'
+    }
+
+    case 6: {
+      return 'Saturday'
+    }
+
+    default: {
+      throw new Error(`Invalid day: ${String(day)}`)
+    }
+  }
+}
+
+const parseDayOfWeek = (dayName: string): number => {
+  const lowerCaseDayName = dayName.toLowerCase()
+
+  switch (lowerCaseDayName) {
+    case 'monday': {
+      return 1
+    }
+
+    case 'tuesday': {
+      return 2
+    }
+
+    case 'wednesday': {
+      return 3
+    }
+
+    case 'thursday': {
+      return 4
+    }
+
+    case 'friday': {
+      return 5
+    }
+
+    case 'saturday': {
+      return 6
+    }
+
+    case 'sunday': {
+      return 0
+    }
+
+    default: {
+      throw new Error(`Invalid day name: ${dayName}`)
+    }
+  }
+}
+
+const formatDayOfWeekList = (days: number[]): string => {
+  const nameList = days.map((day) => formatDayOfWeek(day))
+
+  if (nameList.length === 1) {
+    return nameList[0]!
   }
 
-  return initial(dayNames).join(', ') + ' and ' + last(dayNames)
+  // ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+  // => "Monday, Tuesday, Wednesday, Thursday and Friday"
+  return nameList.slice(0, -1).join(', ') + ' and ' + nameList.at(-1)
 }
 
 export {
-  dayNamesMap,
   getDateFromTs,
   getDateFromMessage,
   formatDate,
   formatDateAsTime,
   formatDateAsISODate,
-  formatDayName,
-  formatDayNames,
+  formatDayOfWeek,
+  parseDayOfWeek,
+  formatDayOfWeekList,
 }

@@ -4,7 +4,7 @@ import type { PostWithItems } from './types.js'
 
 type GetPostWithItemsOptions = {
   userId: string
-  date: string
+  date: Date
 }
 
 const getPostWithItems = async (
@@ -13,7 +13,7 @@ const getPostWithItems = async (
   const { userId, date } = options
   return errorBoundary(() =>
     prisma.post.findUniqueOrThrow({
-      where: { userDate: { userId, date: new Date(date) } },
+      where: { userDate: { userId, date } },
       include: {
         items: {
           orderBy: {

@@ -48,7 +48,8 @@ const addHeading = async (
     }
 
     const userList = await db.getActiveUserList({
-      activeSince: dateFns.subDays(dateFns.parseISO(date), 7),
+      startDate: dateFns.subDays(dateFns.parseISO(date), 7),
+      endDate: dateFns.endOfDay(dateFns.parseISO(date)),
     })
     if (userList instanceof Error) {
       return userList
@@ -60,7 +61,7 @@ const addHeading = async (
           const upsertPostResult = await db.upsertPost({
             userId: user.id,
             title: user.name,
-            date,
+            date: dateFns.parseISO(date),
           })
           if (upsertPostResult instanceof Error) {
             return upsertPostResult
@@ -96,7 +97,7 @@ const updateUserPost = async (
 
   const post = await db.getPostWithItems({
     userId,
-    date,
+    date: dateFns.parseISO(date),
   })
   if (!post) {
     return new Error('Could not find with post with items')
@@ -146,7 +147,7 @@ export const addPostItem = async (
   const post = await db.upsertPost({
     userId,
     title: postTitle,
-    date: postDate,
+    date: dateFns.parseISO(postDate),
   })
   if (post instanceof Error) {
     return post

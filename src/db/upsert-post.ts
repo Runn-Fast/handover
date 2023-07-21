@@ -1,8 +1,16 @@
-import type { Prisma } from '@prisma/client'
 import { errorBoundary } from '@stayradiated/error-boundary'
 import { prisma } from './prisma.js'
 
-const upsertPost = async (post: Prisma.PostUncheckedCreateInput) =>
+type UpsertPostInput = {
+  userId: string
+  date: Date
+  title: string
+
+  channel?: string
+  ts?: string
+}
+
+const upsertPost = async (post: UpsertPostInput) =>
   errorBoundary(() =>
     prisma.post.upsert({
       create: post,

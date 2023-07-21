@@ -1,16 +1,18 @@
-import capitalize from 'lodash/capitalize.js'
-import { dayNamesMap } from '../../date-utils.js'
+import { z } from 'zod'
+import { parseDayOfWeek } from '../../date-utils.js'
 
-export const isValidDay = (days: string[]) => {
-  const capitalizedDays = Object.keys(dayNamesMap).map((day) => capitalize(day))
+// Note: this is a case insensitive regex
+const dayNameRegex =
+  /^(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i
 
-  const dayNamesValidated = days.every(
-    (day: string) => day.toLowerCase() in dayNamesMap,
+const $DayOfWeek = z
+  .string()
+  .regex(
+    dayNameRegex,
+    'Please use one of [ Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday ]',
   )
+  .transform((dayName) => {
+    return parseDayOfWeek(dayName)
+  })
 
-  if (!dayNamesValidated) {
-    return `Please use one of [ ${capitalizedDays.join(` | `)} ]`
-  }
-
-  return true
-}
+export { $DayOfWeek }

@@ -7,12 +7,13 @@ import type { Message, Context } from './types.js'
 import { mapMessageToAction } from './map-message-to-action.js'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
 import { getDateFromTs, getDateFromMessage } from './date-utils.js'
-import { checkAndRemindUsers } from './remind-user.js'
+import { checkAndRemindUsers } from './lib/remind/index.js'
 import {
   SLACK_BOT_TOKEN,
   SLACK_APP_TOKEN,
   PORT,
   SLACK_SIGNING_SECRET,
+  HANDOVER_DAILY_REMINDER_TIME,
 } from './constants.js'
 import * as db from './db/index.js'
 import { isCommand, execCommand } from './command/index.js'
@@ -169,7 +170,11 @@ const start = async () => {
 
   // Check if there are any users who need reminding to send their handover.
   setInterval(async () => {
-    const result = await checkAndRemindUsers({ web })
+    const result = await checkAndRemindUsers({
+      web,
+      defaultDailyReminderTime: HANDOVER_DAILY_REMINDER_TIME,
+      daysSinceLastPostCutOff: 7,
+    })
     if (result instanceof Error) {
       console.error(result)
     }
