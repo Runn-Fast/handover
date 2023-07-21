@@ -71,14 +71,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Generate DB Types
+        run: pnpm exec prisma generate
+
       - name: Check Code Formatting
-        run: pnpm run tidy:check
+        run: pnpm exec xo
 
       - name: Typescript
-        run: pnpm run build
+        run: pnpm exec tsc
 
       - name: Migrate Database
-        run: pnpm run prisma db push
+        run: pnpm exec prisma db push
 
       - name: Tests
         run: pnpm exec vitest --watch=false
