@@ -1,4 +1,5 @@
 export * from './delete-post-item.js'
+export * from './delete-user.js'
 export * from './get-active-user-list.js'
 export * from './get-format-list.js'
 export * from './get-post-list-with-items.js'

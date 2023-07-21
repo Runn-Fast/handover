@@ -5,7 +5,7 @@ import * as db from './index.js'
 
 describe('getPostWithItems', () => {
   const userId = randomUUID()
-  const date = '2022-08-15T00:00:00+00:00'
+  const date = new Date('2022-08-15T00:00:00+00:00')
 
   beforeEach(async () => {
     const user = await db.upsertUser({

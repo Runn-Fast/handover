@@ -59,7 +59,8 @@
     "semicolon": false,
     "prettier": true,
     "rules": {
-      "@typescript-eslint/naming-convention": "off"
+      "@typescript-eslint/naming-convention": "off",
+      "no-empty-pattern": "off"
     }
   },
   "prettier": {

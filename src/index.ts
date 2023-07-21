@@ -13,7 +13,7 @@ import {
   publishPrivateContentToSlack,
 } from './publish-to-slack.js'
 import { getDateFromTs, getDateFromMessage } from './date-utils.js'
-import { checkAndRemindUsers } from './remind-user.js'
+import { checkAndRemindUsers } from './lib/remind/index.js'
 import {
   SLACK_BOT_TOKEN,
   SLACK_APP_TOKEN,
@@ -21,6 +21,7 @@ import {
   HANDOVER_TITLE,
   PORT,
   SLACK_SIGNING_SECRET,
+  HANDOVER_DAILY_REMINDER_TIME,
 } from './constants.js'
 import * as db from './db/index.js'
 import { isCommand, execCommand } from './command/index.js'
@@ -67,7 +68,8 @@ const addHeading = async (
     }
 
     const userList = await db.getActiveUserList({
-      activeSince: dateFns.subDays(dateFns.parseISO(date), 7),
+      startDate: dateFns.subDays(dateFns.parseISO(date), 7),
+      endDate: dateFns.endOfDay(dateFns.parseISO(date)),
     })
     if (userList instanceof Error) {
       return userList
@@ -79,7 +81,7 @@ const addHeading = async (
           const upsertPostResult = await db.upsertPost({
             userId: user.id,
             title: user.name,
-            date,
+            date: dateFns.parseISO(date),
           })
           if (upsertPostResult instanceof Error) {
             return upsertPostResult
@@ -115,7 +117,7 @@ const updateUserPost = async (
 
   const post = await db.getPostWithItems({
     userId,
-    date,
+    date: dateFns.parseISO(date),
   })
   if (!post) {
     return new Error('Could not find with post with items')
@@ -165,7 +167,7 @@ const addPostItem = async (
   const post = await db.upsertPost({
     userId,
     title: postTitle,
-    date: postDate,
+    date: dateFns.parseISO(postDate),
   })
   if (post instanceof Error) {
     return post
@@ -402,7 +404,11 @@ const start = async () => {
 
   // Check if there are any users who need reminding to send their handover.
   setInterval(async () => {
-    const result = await checkAndRemindUsers({ web })
+    const result = await checkAndRemindUsers({
+      web,
+      defaultDailyReminderTime: HANDOVER_DAILY_REMINDER_TIME,
+      daysSinceLastPostCutOff: 7,
+    })
     if (result instanceof Error) {
       console.error(result)
     }
