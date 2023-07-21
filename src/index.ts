@@ -38,7 +38,7 @@ const addHeading = async (
 
   const heading = await db.upsertHeading({
     date,
-    title: `:star: *${HANDOVER_TITLE} ∙ ${dateFns.format(
+    title: `:sstar: *${HANDOVER_TITLE} ∙ ${dateFns.format(
       dateFns.parseISO(date),
       'PPPP',
     )}*`,
