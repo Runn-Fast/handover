@@ -16,6 +16,8 @@ const schema = z.object({
     .regex(/^\d\d:\d\d$/)
     .default('17:00'),
   OPENAI_API_KEY: z.optional(z.string()),
+  RUNN_API_BASE_URL: z.string(),
+  RUNN_API_TOKEN: z.string(),
 })
 
 const config = schema.parse(process.env)
@@ -28,3 +30,5 @@ export const HANDOVER_CHANNEL = config.HANDOVER_CHANNEL
 export const HANDOVER_TITLE = config.HANDOVER_TITLE
 export const HANDOVER_DAILY_REMINDER_TIME = config.HANDOVER_DAILY_REMINDER_TIME
 export const OPENAI_API_KEY = config.OPENAI_API_KEY
+export const RUNN_API_BASE_URL = config.RUNN_API_BASE_URL
+export const RUNN_API_TOKEN = config.RUNN_API_TOKEN
