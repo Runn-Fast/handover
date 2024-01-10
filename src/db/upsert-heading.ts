@@ -3,7 +3,7 @@ import { errorBoundary } from '@stayradiated/error-boundary'
 import { prisma } from './prisma.js'
 
 const upsertHeading = async (heading: Prisma.HeadingUncheckedCreateInput) =>
-  errorBoundary(() =>
+  errorBoundary(async () =>
     prisma.heading.upsert({
       create: heading,
       update: heading,

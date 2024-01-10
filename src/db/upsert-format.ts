@@ -3,7 +3,7 @@ import { errorBoundary } from '@stayradiated/error-boundary'
 import { prisma } from './prisma.js'
 
 const upsertFormat = async (format: Prisma.FormatUncheckedCreateInput) => {
-  return errorBoundary(() =>
+  return errorBoundary(async () =>
     prisma.format.upsert({
       create: format,
       update: format,

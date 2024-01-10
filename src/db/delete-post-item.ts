@@ -11,7 +11,7 @@ const deletePostItem = async (
   options: DeletePostItemOptions,
 ): Promise<PostItem | Error> => {
   const { channel, ts } = options
-  return errorBoundary(() =>
+  return errorBoundary(async () =>
     prisma.postItem.delete({
       where: { channelTs: { channel, ts } },
     }),

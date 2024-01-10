@@ -45,7 +45,7 @@ pnpm run dev
 ```shell
 cp .env.template .env.test
 
-# update DATABASE_URL to point to Postgre
+# update DATABASE_URL to point to Postgres
 edit .env.test
 
 # install dependencies (if you haven't already)

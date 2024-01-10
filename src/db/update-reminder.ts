@@ -6,7 +6,7 @@ const updateReminder = async (
   reminderId: number,
   data: Prisma.ReminderUpdateInput,
 ) =>
-  errorBoundary(() =>
+  errorBoundary(async () =>
     prisma.reminder.update({
       where: { id: reminderId },
       data,

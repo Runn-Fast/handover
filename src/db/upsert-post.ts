@@ -11,7 +11,7 @@ type UpsertPostInput = {
 }
 
 const upsertPost = async (post: UpsertPostInput) =>
-  errorBoundary(() =>
+  errorBoundary(async () =>
     prisma.post.upsert({
       create: post,
       update: post,

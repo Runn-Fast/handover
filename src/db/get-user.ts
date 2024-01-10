@@ -8,7 +8,7 @@ type GetUserOptions = {
 
 const getUser = async (options: GetUserOptions): Promise<User | Error> => {
   const { userId } = options
-  return errorBoundary(() =>
+  return errorBoundary(async () =>
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
     }),

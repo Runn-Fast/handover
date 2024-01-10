@@ -3,7 +3,7 @@ import { errorBoundary } from '@stayradiated/error-boundary'
 import { prisma } from './prisma.js'
 
 const updatePost = async (postId: number, data: Prisma.PostUpdateInput) =>
-  errorBoundary(() =>
+  errorBoundary(async () =>
     prisma.post.update({
       where: { id: postId },
       data,

@@ -10,7 +10,7 @@ type UpsertPostItemResult = {
 const upsertPostItem = async (
   postItem: Prisma.PostItemUncheckedCreateInput,
 ): Promise<UpsertPostItemResult | Error> => {
-  const originalPostItem = await errorBoundary(() =>
+  const originalPostItem = await errorBoundary(async () =>
     prisma.postItem.findUnique({
       where: { channelTs: { channel: postItem.channel, ts: postItem.ts } },
     }),
@@ -19,7 +19,7 @@ const upsertPostItem = async (
     return originalPostItem
   }
 
-  const upsertResult = await errorBoundary(() =>
+  const upsertResult = await errorBoundary(async () =>
     prisma.postItem.upsert({
       create: postItem,
       update: postItem,
