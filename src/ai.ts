@@ -62,31 +62,39 @@ const generateReminder = async (
     'what they would like to share with the team',
   ])
 
+  const defaultPrompt = `Hey ${name}, what have you been working today?`
+
   const prompt = `${concern} ${relation}, ${name}, ${role}. ${action} ${question}.\n You: "`
   console.log(prompt)
 
-  const response = await openai.createCompletion({
-    model: 'text-davinci-002',
-    prompt,
-    temperature: 1,
-    max_tokens: 150,
-    top_p: 1,
-    frequency_penalty: 1,
-    presence_penalty: 1,
-  })
+  try {
+    const response = await openai.createCompletion({
+      model: 'text-davinci-002',
+      prompt,
+      temperature: 1,
+      max_tokens: 150,
+      top_p: 1,
+      frequency_penalty: 1,
+      presence_penalty: 1,
+    })
 
-  console.log(response.data.choices)
+    console.log(response.data.choices)
 
-  const text = response.data.choices?.[0]?.text
-    ?.trim()
-    .split('\n')?.[0]
-    ?.replace(/".?$/, '')
+    const text = response.data.choices?.[0]?.text
+      ?.trim()
+      .split('\n')?.[0]
+      ?.replace(/".?$/, '')
 
-  if (!text) {
-    return `Hey ${name}, what have you been working today?`
+    if (!text) {
+      return defaultPrompt
+    }
+
+    return text
+  } catch (error) {
+    console.error('Error generating reminder:', error)
+
+    return defaultPrompt
   }
-
-  return text
 }
 
 export { generateReminder }
