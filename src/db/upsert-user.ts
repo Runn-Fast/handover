@@ -3,7 +3,7 @@ import { errorBoundary } from '@stayradiated/error-boundary'
 import { prisma } from './prisma.js'
 
 const upsertUser = async (user: Prisma.UserUncheckedCreateInput) =>
-  errorBoundary(() =>
+  errorBoundary(async () =>
     prisma.user.upsert({
       create: user,
       update: user,

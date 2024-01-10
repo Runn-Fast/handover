@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client'
 import * as dateFns from 'date-fns'
 import { errorListBoundary } from '@stayradiated/error-boundary'
 import { formatDateAsISODate, formatDateAsTime } from '../../date-utils.js'
@@ -48,22 +47,19 @@ const findUsersWhoNeedReminder = async (
             userId: user.id,
             date: dateFns.parseISO(userDate),
           })
-          const postNotFound = post instanceof Prisma.NotFoundError
-          if (!postNotFound && post instanceof Error) {
+          if (post instanceof Error) {
             return post
           }
 
-          if (postNotFound || post.items.length === 0) {
+          if (!post || post.items.length === 0) {
             const reminder = await db.getReminder({
               userId: user.id,
               date: userDate,
             })
-            const reminderNotFound = reminder instanceof Prisma.NotFoundError
-            if (!reminderNotFound && reminder instanceof Error) {
+            if (reminder instanceof Error) {
               return reminder
             }
-
-            if (reminderNotFound) {
+            if (!reminder) {
               return user
             }
           }

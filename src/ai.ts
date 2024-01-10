@@ -1,8 +1,9 @@
-import { Configuration, OpenAIApi } from 'openai'
+import OpenAI from 'openai'
 import { OPENAI_API_KEY } from './constants.js'
 
-const configuration = new Configuration({ apiKey: OPENAI_API_KEY })
-const openai = new OpenAIApi(configuration)
+const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY,
+})
 
 const pick = (array: string[]): string => {
   if (array.length === 0) {
@@ -68,7 +69,7 @@ const generateReminder = async (
   console.log(prompt)
 
   try {
-    const response = await openai.createCompletion({
+    const response = await openai.completions.create({
       model: 'text-davinci-002',
       prompt,
       temperature: 1,
@@ -78,9 +79,7 @@ const generateReminder = async (
       presence_penalty: 1,
     })
 
-    console.log(response.data.choices)
-
-    const text = response.data.choices?.[0]?.text
+    const text = response.choices?.[0]?.text
       ?.trim()
       .split('\n')?.[0]
       ?.replace(/".?$/, '')

@@ -3,7 +3,7 @@ import { errorBoundary } from '@stayradiated/error-boundary'
 import { prisma } from './prisma.js'
 
 const upsertReminder = async (reminder: Prisma.ReminderUncheckedCreateInput) =>
-  errorBoundary(() =>
+  errorBoundary(async () =>
     prisma.reminder.upsert({
       create: reminder,
       update: reminder,

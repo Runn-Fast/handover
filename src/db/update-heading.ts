@@ -6,7 +6,7 @@ const updateHeading = async (
   headingId: number,
   data: Prisma.HeadingUpdateInput,
 ) =>
-  errorBoundary(() =>
+  errorBoundary(async () =>
     prisma.heading.update({
       where: { id: headingId },
       data,

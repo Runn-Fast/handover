@@ -8,7 +8,7 @@ type GetPostOptions = {
 
 const getPost = async (options: GetPostOptions): Promise<Post | Error> => {
   const { id } = options
-  return errorBoundary(() =>
+  return errorBoundary(async () =>
     prisma.post.findUniqueOrThrow({
       where: { id },
     }),

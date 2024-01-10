@@ -9,10 +9,10 @@ type GetPostWithItemsOptions = {
 
 const getPostWithItems = async (
   options: GetPostWithItemsOptions,
-): Promise<PostWithItems | Error> => {
+): Promise<PostWithItems | Error | undefined> => {
   const { userId, date } = options
-  return errorBoundary(() =>
-    prisma.post.findUniqueOrThrow({
+  const row = await errorBoundary(async () =>
+    prisma.post.findUnique({
       where: { userDate: { userId, date } },
       include: {
         items: {
@@ -23,6 +23,7 @@ const getPostWithItems = async (
       },
     }),
   )
+  return row ?? undefined
 }
 
 export { getPostWithItems }
