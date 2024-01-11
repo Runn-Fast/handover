@@ -9,12 +9,17 @@ const listenToMessage = async (
   const queue = new PQueue({ concurrency: 1 })
 
   app.event('message', async (event) => {
-    const { payload, context } = event
-    await queue.add(async () => onMessage(payload, context))
-  })
-
-  app.event('reaction_added', async (message) => {
-    console.log(message)
+    try {
+      const { payload, context } = event
+      await queue.add(async () => onMessage(payload, context))
+    } catch (error) {
+      console.error('Error from listenToMessage')
+      console.error('==========================')
+      console.error(error)
+      console.error('==========================')
+      console.error(JSON.stringify(event))
+      console.error('==========================')
+    }
   })
 
   app.error(async (error) => {

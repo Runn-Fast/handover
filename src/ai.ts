@@ -23,22 +23,19 @@ const generateReminder = async (
 ): Promise<string> => {
   const { name, daysSinceLastPost } = options
 
+  const systemPrompt = `You are a helpful assistant.`
+
   const concern =
     daysSinceLastPost > 1
-      ? `It has been ${daysSinceLastPost} days since you last heard from`
+      ? `It has been ${daysSinceLastPost} days since we last heard from`
       : pick([
-          'You are looking forward to hearing about',
-          'You are excited to hear about',
-          "You can't wait to hear about",
-          'You have been waiting all day to hear about',
+          'I am looking forward to hearing about',
+          'I am excited to hear about',
+          "I can't wait to hear about",
+          'I have been waiting all day to hear about',
         ])
 
-  const relation = pick([
-    'your colleague',
-    'your buddy',
-    'your friend',
-    'your mate',
-  ])
+  const relation = pick(['my colleague', 'my buddy', 'my friend', 'my mate'])
 
   const role = pick([
     'who is an engineer',
@@ -50,9 +47,9 @@ const generateReminder = async (
   ])
 
   const action = pick([
-    'You send them a text message to ask',
-    'You call them on the phone to ask',
-    'You ask them a question about',
+    'I want to send them a text message to ask',
+    'I want to call them on the phone to ask',
+    'I want to ask them a question about',
   ])
 
   const question = pick([
@@ -63,25 +60,30 @@ const generateReminder = async (
     'what they would like to share with the team',
   ])
 
+  const task =
+    'Could you please write a very short message (2 sentences max) that I can ask them? Please be informal and casual, but also funny.'
+
   const defaultPrompt = `Hey ${name}, what have you been working today?`
 
-  const prompt = `${concern} ${relation}, ${name}, ${role}. ${action} ${question}.\n You: "`
-  console.log(prompt)
+  const userPrompt = `${concern} ${relation}, ${name}, ${role}. ${action} ${question}. ${task}`
 
   try {
-    const response = await openai.completions.create({
-      model: 'text-davinci-002',
-      prompt,
-      temperature: 1,
-      max_tokens: 150,
-      top_p: 1,
-      frequency_penalty: 1,
-      presence_penalty: 1,
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt,
+        },
+        {
+          role: 'user',
+          content: userPrompt,
+        },
+      ],
     })
 
-    const text = response.choices?.[0]?.text
+    const text = response.choices?.[0]?.message.content
       ?.trim()
-      .split('\n')?.[0]
       ?.replace(/".?$/, '')
 
     if (!text) {
