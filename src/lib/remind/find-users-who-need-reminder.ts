@@ -59,6 +59,7 @@ const findUsersWhoNeedReminder = async (
             if (reminder instanceof Error) {
               return reminder
             }
+
             if (!reminder) {
               return user
             }
