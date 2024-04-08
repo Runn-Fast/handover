@@ -77,4 +77,16 @@ describe('GetDateFromTsOptions', () => {
       message: '_(3 days late):_ (4 days ago): (5 days ago): hello',
     })
   })
+  test('allow new lines', () => {
+    const dateString = parseDateFromMessage({
+      messageText: '(3 days ago):  \nhello world',
+      ts,
+      timeZone: 'Pacific/Auckland',
+    })
+    expect(dateString).toEqual({
+      type: 'MATCH',
+      date: '2023-07-15T00:00:00+00:00',
+      message: '_(3 days late):_ \nhello world',
+    })
+  })
 })
