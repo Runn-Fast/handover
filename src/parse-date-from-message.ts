@@ -25,7 +25,9 @@ const parseDateFromMessage = (
   const instant = Number.parseInt(ts, 10) * 1000
 
   // Match if text starts with "(date):"
-  const regexMatch = /^\((today|yesterday|(\d+) days? ago)\):/.exec(messageText)
+  const regexMatch = /^\((today|yesterday|(\d+) days? ago)\): */.exec(
+    messageText,
+  )
   const relativeDate = regexMatch?.[1]
   const daysAgoString = regexMatch?.[2]
   if (!regexMatch || !relativeDate) {
@@ -64,9 +66,7 @@ Supported dates:
     timeZone,
   })
 
-  const messageWithoutRelativeDate = messageText
-    .slice(regexMatch[0].length)
-    .trim()
+  const messageWithoutRelativeDate = messageText.slice(regexMatch[0].length)
 
   const daysLater = dateFns.differenceInDays(instant, date)
 
