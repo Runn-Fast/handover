@@ -25,7 +25,7 @@ const parseDateFromMessage = (
   const instant = Number.parseInt(ts, 10) * 1000
 
   // Match if text starts with "(date):"
-  const regexMatch = /^\((today|yesterday|(\d+) days? ago)\): */.exec(
+  const regexMatch = /^\((today|yesterday|(\d+) days? (:?ago|late))\): */.exec(
     messageText,
   )
   const relativeDate = regexMatch?.[1]
@@ -45,13 +45,11 @@ const parseDateFromMessage = (
   } else {
     return new Error(`⚠️ Sorry, that date is not supported: "${relativeDate}".
 
-Supported dates:
-- today
-- yesterday
-- 1 day ago
-- 2 days ago
-- 3 days ago
-- X days ago`)
+Supported date formats:
+- (today):
+- (yesterday):
+- (1 day late):
+- (2 days ago):`)
   }
 
   if (date > instant) {

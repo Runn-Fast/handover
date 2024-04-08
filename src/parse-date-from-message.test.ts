@@ -40,6 +40,18 @@ describe('GetDateFromTsOptions', () => {
       message: '_(1 day late):_ hello',
     })
   })
+  test('1 day late (NZ)', () => {
+    const dateString = parseDateFromMessage({
+      messageText: '(1 day late): hello',
+      ts,
+      timeZone: 'Pacific/Auckland',
+    })
+    expect(dateString).toEqual({
+      type: 'MATCH',
+      date: '2023-07-17T00:00:00+00:00',
+      message: '_(1 day late):_ hello',
+    })
+  })
   test('2 days ago (NZ)', () => {
     const dateString = parseDateFromMessage({
       messageText: '(2 days ago): hello',
@@ -52,9 +64,9 @@ describe('GetDateFromTsOptions', () => {
       message: '_(2 days late):_ hello',
     })
   })
-  test('3 days ago (NZ)', () => {
+  test('3 days late (NZ)', () => {
     const dateString = parseDateFromMessage({
-      messageText: '(3 days ago): hello world',
+      messageText: '(3 days late): hello world',
       ts,
       timeZone: 'Pacific/Auckland',
     })
