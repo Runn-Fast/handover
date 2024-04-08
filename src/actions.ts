@@ -107,9 +107,9 @@ const updateUserPost = async (
     return post
   }
 
-  const formatFnList = await getFormatFnList()
+  const formatFunctionList = await getFormatFnList()
 
-  const text = formatPostAsText({ post, formatFnList })
+  const text = formatPostAsText({ post, formatFnList: formatFunctionList })
   const ts = post.ts ?? undefined
 
   const publishedTs = await publishPublicContentToSlack({

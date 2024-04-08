@@ -17,19 +17,21 @@ const padToLength = (string_: string, length: number): string => {
   return string_
 }
 
-const formatArguments = (args: ArgumentDefinition[]): string => {
-  const argStrings: string[] = []
-  for (const arg of args) {
-    let argString = arg.name
-    if (arg.variadic) {
-      argString = `...${argString}`
+const formatArguments = (arguments_: ArgumentDefinition[]): string => {
+  const argumentStrings: string[] = []
+  for (const argument of arguments_) {
+    let argumentString = argument.name
+    if (argument.variadic) {
+      argumentString = `...${argumentString}`
     }
 
-    argString = arg.required ? `<${argString}>` : `[${argString}]`
-    argStrings.push(argString)
+    argumentString = argument.required
+      ? `<${argumentString}>`
+      : `[${argumentString}]`
+    argumentStrings.push(argumentString)
   }
 
-  return argStrings.length > 0 ? argStrings.join(' ') + ' ' : ''
+  return argumentStrings.length > 0 ? argumentStrings.join(' ') + ' ' : ''
 }
 
 const formatOptions = (options: OptionDefinition[]): string => {

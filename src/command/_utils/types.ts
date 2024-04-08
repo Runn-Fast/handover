@@ -6,4 +6,4 @@ export type CreateCmdOptions = {
   userId: string
 }
 
-export type CreateCmdFn = (options: CreateCmdOptions) => CliCommand
+export type CreateCmdFunction = (options: CreateCmdOptions) => CliCommand

@@ -1,10 +1,10 @@
 import type Bolt from '@slack/bolt'
 import PQueue from 'p-queue'
-import type { OnMessageFn } from './types.js'
+import type { OnMessageFunction } from './types.js'
 
 const listenToMessage = async (
   app: Bolt.App,
-  onMessage: OnMessageFn,
+  onMessage: OnMessageFunction,
 ): Promise<void> => {
   const queue = new PQueue({ concurrency: 1 })
 

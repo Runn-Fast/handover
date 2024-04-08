@@ -2,14 +2,14 @@ import { CliCommand } from 'cilly'
 import { z } from 'zod'
 import { publishPrivateContentToSlack } from '../../../publish-to-slack.js'
 import { deleteFormat } from '../../../format.js'
-import type { CreateCmdFn } from '../../_utils/types.js'
+import type { CreateCmdFunction } from '../../_utils/types.js'
 import { createHelpHandler } from '../../_utils/create-help-handler.js'
 
-const $FormatDeleteCmdArgs = z.object({
+const $FormatDeleteCmdArguments = z.object({
   id: z.string(),
 })
 
-const createFormatDeleteCmd: CreateCmdFn = (context) => {
+const createFormatDeleteCmd: CreateCmdFunction = (context) => {
   const { web, userId } = context
 
   const formatDeleteCmd = new CliCommand('delete')
@@ -18,8 +18,8 @@ const createFormatDeleteCmd: CreateCmdFn = (context) => {
       name: 'id',
       required: true,
     })
-    .withHandler(async (anyArgs) => {
-      const { id } = $FormatDeleteCmdArgs.parse(anyArgs)
+    .withHandler(async (anyArguments) => {
+      const { id } = $FormatDeleteCmdArguments.parse(anyArguments)
 
       const response = await deleteFormat({ id })
 

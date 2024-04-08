@@ -27,72 +27,6 @@ const getDateFromTs = (options: GetDateFromTsOptions): string => {
   return output
 }
 
-type GetDateFromMessageOptions = {
-  messageText: string
-  ts: string
-  timeZone: string
-}
-
-const getDateFromMessage = (
-  options: GetDateFromMessageOptions,
-): undefined | string | Error => {
-  const { messageText, ts, timeZone } = options
-
-  const instant = Number.parseInt(ts, 10) * 1000
-
-  // Match if text starts with "(date):"
-  const match = /^\((.+)\):/.exec(messageText)?.[1]
-  if (typeof match !== 'string') {
-    return
-  }
-
-  let date: number
-  switch (match) {
-    case 'today': {
-      date = instant
-      break
-    }
-
-    case '1 day ago':
-    case 'yesterday': {
-      date = dateFns.subDays(instant, 1).getTime()
-      break
-    }
-
-    case '2 days ago': {
-      date = dateFns.subDays(instant, 2).getTime()
-      break
-    }
-
-    case '3 days ago': {
-      date = dateFns.subDays(instant, 3).getTime()
-      break
-    }
-
-    default: {
-      return new Error(`⚠️ Sorry, that date is not supported: "${match}".
-
-Supported dates:
-- today
-- yesterday
-- 2 days ago
-- 3 days ago`)
-    }
-  }
-
-  if (date > instant) {
-    // Date is in the future, so it's probably a mistake
-    return
-  }
-
-  const output = formatDateAsISODate({
-    instant: date,
-    timeZone,
-  })
-
-  return output
-}
-
 type FormatDateOptions = {
   instant: number
   timeZone: string
@@ -101,7 +35,7 @@ type FormatDateOptions = {
 
 const formatDate = (options: FormatDateOptions): string => {
   const { instant, timeZone, format } = options
-  const dateTime = dateFnsTz.utcToZonedTime(instant, timeZone)
+  const dateTime = dateFnsTz.toZonedTime(instant, timeZone)
   return dateFnsTz.format(dateTime, format, { timeZone })
 }
 
@@ -215,7 +149,6 @@ const formatDayOfWeekList = (days: number[]): string => {
 
 export {
   getDateFromTs,
-  getDateFromMessage,
   formatDate,
   formatDateAsTime,
   formatDateAsISODate,

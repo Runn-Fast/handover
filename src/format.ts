@@ -6,7 +6,7 @@ import {
   getFormatList,
   updateFormatDeletedAt,
 } from './db/index.js'
-import type { FormatFn } from './types.js'
+import type { FormatFunction } from './types.js'
 
 type SetFormatOptions = {
   id: string
@@ -69,9 +69,7 @@ const listFormats = async (_options: ListFormatsOptions): Promise<string> => {
     })
     .join('\n')
 
-  if (!formatList) {
-    formatList = '_No formats found._'
-  }
+  formatList ||= '_No formats found._'
 
   const response = `*Available Formats:*\n${formatList}`
 
@@ -93,9 +91,11 @@ const deleteFormat = async (options: DeleteFormatOptions): Promise<string> => {
   return `🗑 Successfully deleted format with ID: "${id}"`
 }
 
-type CreateFormatFnOptions = Pick<Format, 'pattern' | 'replacement'>
+type CreateFormatFunctionOptions = Pick<Format, 'pattern' | 'replacement'>
 
-const createFormatFn = (format: CreateFormatFnOptions): FormatFn => {
+const createFormatFunction = (
+  format: CreateFormatFunctionOptions,
+): FormatFunction => {
   const { pattern, replacement } = format
   const regexp = parseRegExp(pattern)
 
@@ -104,18 +104,21 @@ const createFormatFn = (format: CreateFormatFnOptions): FormatFn => {
   }
 }
 
-const getFormatFnList = async (): Promise<FormatFn[]> => {
+const getFormatFunctionList = async (): Promise<FormatFunction[]> => {
   const list = await getFormatList()
   if (list instanceof Error) {
     return []
   }
 
-  return list.map((format) => createFormatFn(format))
+  return list.map((format) => createFormatFunction(format))
 }
 
-const applyFormatFnList = (text: string, formatFnList: FormatFn[]): string => {
-  for (const formatFn of formatFnList) {
-    text = formatFn(text)
+const applyFormatFunctionList = (
+  text: string,
+  formatFunctionList: FormatFunction[],
+): string => {
+  for (const formatFunction of formatFunctionList) {
+    text = formatFunction(text)
   }
 
   return text
@@ -125,7 +128,7 @@ export {
   setFormat,
   listFormats,
   deleteFormat,
-  createFormatFn,
-  getFormatFnList,
-  applyFormatFnList,
+  createFormatFunction as createFormatFn,
+  getFormatFunctionList as getFormatFnList,
+  applyFormatFunctionList as applyFormatFnList,
 }

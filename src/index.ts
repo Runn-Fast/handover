@@ -1,12 +1,12 @@
 import Bolt from '@slack/bolt'
 import { WebClient } from '@slack/web-api'
-import { createUserFetcher } from './create-user-fetcher.js'
-import type { UserFetcher } from './create-user-fetcher.js'
+import { createUserFetcher, type UserFetcher } from './create-user-fetcher.js'
 import { listenToMessage } from './listen-to-message.js'
 import type { Message, Context } from './types.js'
 import { mapMessageToAction } from './map-message-to-action.js'
 import { publishPrivateContentToSlack } from './publish-to-slack.js'
-import { getDateFromTs, getDateFromMessage } from './date-utils.js'
+import { getDateFromTs } from './date-utils.js'
+import { parseDateFromMessage } from './parse-date-from-message.js'
 import { checkAndRemindUsers } from './lib/remind/index.js'
 import {
   SLACK_BOT_TOKEN,
@@ -59,33 +59,41 @@ const createMessageHandler = (options: CreateMessageHandlerOptions) => {
       dayStartsAtHour: 0,
     })
 
-    const messageDate = getDateFromMessage({
+    const messageDateResult = parseDateFromMessage({
       messageText: action.text,
       ts: action.ts,
       timeZone: user.timeZone,
     })
-    if (messageDate instanceof Error) {
+    if (messageDateResult instanceof Error) {
       await publishPrivateContentToSlack({
         web,
         userId: action.userId,
-        text: messageDate.message,
+        text: messageDateResult.message,
       })
       return
     }
 
-    const date = messageDate ?? actionDate
+    const messageDate =
+      messageDateResult.type === 'NO_MATCH'
+        ? actionDate
+        : messageDateResult.date
 
-    console.log(user.name, date.split('T')[0])
+    const messageText =
+      messageDateResult.type === 'NO_MATCH'
+        ? action.text
+        : messageDateResult.message
+
+    console.log(user.name, messageDate.split('T')[0], messageText)
 
     if (action.type === 'ADD' || action.type === 'CHANGE') {
       const addPostItemResult = await addPostItem({
         web,
         userId: action.userId,
         postTitle: user.name,
-        postDate: date,
+        postDate: messageDate,
         channel: action.channel,
         ts: action.ts,
-        text: action.text,
+        text: messageText,
       })
       if (addPostItemResult instanceof Error) {
         return addPostItemResult
@@ -94,7 +102,7 @@ const createMessageHandler = (options: CreateMessageHandlerOptions) => {
       const deletePostItemResult = await deletePostItem({
         web,
         userId: action.userId,
-        postDate: date,
+        postDate: messageDate,
         channel: action.channel,
         ts: action.ts,
       })

@@ -8,10 +8,10 @@ export type Action = {
   text: string
 }
 
-export type FormatFn = (text: string) => string
+export type FormatFunction = (text: string) => string
 
 export type Message = KnownEventFromType<'message'>
-export type OnMessageFn = (
+export type OnMessageFunction = (
   message: Message,
   context: Context,
 ) => Promise<void> | void

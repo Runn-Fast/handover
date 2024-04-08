@@ -12,13 +12,15 @@ type ExecCommandOptions = {
 const execCommand = async (options: ExecCommandOptions) => {
   const { web, action } = options
 
-  const args = parseShellArgs(action.text.replace(/^<@\w{10,}>/, '').trim())
+  const arguments_ = parseShellArgs(
+    action.text.replace(/^<@\w{10,}>/, '').trim(),
+  )
 
-  console.log(args)
+  console.log(arguments_)
 
   // Process.argv is [node, handover, ...args]
-  args.unshift('node')
-  args.unshift('handover')
+  arguments_.unshift('node')
+  arguments_.unshift('handover')
 
   const handoverCmd = createHandoverCommand({
     web,
@@ -26,7 +28,7 @@ const execCommand = async (options: ExecCommandOptions) => {
   })
 
   try {
-    await handoverCmd.process(args)
+    await handoverCmd.process(arguments_)
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : JSON.stringify(error)

@@ -1,12 +1,12 @@
 import { CliCommand } from 'cilly'
-import type { CreateCmdFn } from '../_utils/types.js'
+import type { CreateCmdFunction } from '../_utils/types.js'
 import { createHelpHandler } from '../_utils/create-help-handler.js'
 import { getUser } from '../../db/get-user.js'
 import { createWorkdaysOnCmd } from './on/index.js'
 import { createWorkdaysOffCmd } from './off/index.js'
 import { defaultResponse } from './response.js'
 
-const createWorkdaysCmd: CreateCmdFn = (context) => {
+const createWorkdaysCmd: CreateCmdFunction = (context) => {
   const workdaysOnCmd = createWorkdaysOnCmd(context)
   const workdaysOffCmd = createWorkdaysOffCmd(context)
   const { web, userId } = context
@@ -15,7 +15,7 @@ const createWorkdaysCmd: CreateCmdFn = (context) => {
     .withHelpHandler(createHelpHandler(context))
     .withSubCommands(workdaysOnCmd, workdaysOffCmd)
     .withDescription('workdays that you will be reminded to post your handover')
-    .withHandler(async (_args) => {
+    .withHandler(async (_arguments) => {
       const user = await getUser({ userId })
       if (user instanceof Error) {
         throw user
