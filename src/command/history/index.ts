@@ -6,14 +6,14 @@ import { publishPrivateContentToSlack } from '../../publish-to-slack.js'
 import { getFormatFnList } from '../../format.js'
 import { getUser, getPostListWithItems } from '../../db/index.js'
 import { formatPostAsText } from '../../format-post-as-text.js'
-import type { CreateCmdFn } from '../_utils/types.js'
+import type { CreateCmdFunction } from '../_utils/types.js'
 import { createHelpHandler } from '../_utils/create-help-handler.js'
 
 const $HistoryCmdOptions = z.object({
   daysBefore: z.coerce.number(),
 })
 
-const createHistoryCmd: CreateCmdFn = (context) => {
+const createHistoryCmd: CreateCmdFunction = (context) => {
   const { web, userId } = context
 
   const historyCmd = new CliCommand('history')
@@ -25,7 +25,7 @@ const createHistoryCmd: CreateCmdFn = (context) => {
       defaultValue: 7,
       args: [{ name: 'days', required: false }],
     })
-    .withHandler(async (_args, anyOptions) => {
+    .withHandler(async (_arguments, anyOptions) => {
       const { daysBefore } = $HistoryCmdOptions.parse(anyOptions)
 
       if (daysBefore > 30) {
@@ -60,7 +60,7 @@ const createHistoryCmd: CreateCmdFn = (context) => {
         return
       }
 
-      const formatFnList = await getFormatFnList()
+      const formatFunctionList = await getFormatFnList()
       const text = result
         .map((post) => {
           if (post.items.length === 0) {
@@ -75,7 +75,7 @@ const createHistoryCmd: CreateCmdFn = (context) => {
 
           return `${formatPostAsText({
             post: { ...post, title },
-            formatFnList,
+            formatFnList: formatFunctionList,
           })}`
         })
         .join('\n')

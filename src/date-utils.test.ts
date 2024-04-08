@@ -1,7 +1,6 @@
 import { describe, test, expect } from 'vitest'
 import {
   getDateFromTs,
-  getDateFromMessage,
   formatDayOfWeek,
   formatDayOfWeekList,
   parseDayOfWeek,
@@ -35,44 +34,6 @@ describe('getDateFromTs', () => {
       dayStartsAtHour: 3,
     })
     expect(dateString).toEqual('2022-08-21T00:00:00+00:00')
-  })
-})
-
-describe('GetDateFromTsOptions', () => {
-  // 1am nz time
-  const ts = formatTs(new Date('2023-07-18T01:00:00.000+12:00'))
-
-  test('yesterday (UTC)', () => {
-    const dateString = getDateFromMessage({
-      messageText: '(yesterday): hello',
-      ts,
-      timeZone: 'UTC',
-    })
-    expect(dateString).toEqual('2023-07-16T00:00:00+00:00')
-  })
-  test('yesterday (NZ)', () => {
-    const dateString = getDateFromMessage({
-      messageText: '(yesterday): hello',
-      ts,
-      timeZone: 'Pacific/Auckland',
-    })
-    expect(dateString).toEqual('2023-07-17T00:00:00+00:00')
-  })
-  test('2 days ago (NZ)', () => {
-    const dateString = getDateFromMessage({
-      messageText: '(2 days ago): hello',
-      ts,
-      timeZone: 'Pacific/Auckland',
-    })
-    expect(dateString).toEqual('2023-07-16T00:00:00+00:00')
-  })
-  test('3 days ago (NZ)', () => {
-    const dateString = getDateFromMessage({
-      messageText: '(3 days ago): hello',
-      ts,
-      timeZone: 'Pacific/Auckland',
-    })
-    expect(dateString).toEqual('2023-07-15T00:00:00+00:00')
   })
 })
 

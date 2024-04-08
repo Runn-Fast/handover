@@ -7,10 +7,10 @@ describe('createFormatFn', () => {
       pattern: '/foo/g',
       replacement: 'bar',
     }
-    const formatFn = createFormatFn(format)
-    expect(formatFn('foo')).toBe('bar')
-    expect(formatFn('foobar')).toBe('barbar')
-    expect(formatFn('barfoo')).toBe('barbar')
+    const formatFunction = createFormatFn(format)
+    expect(formatFunction('foo')).toBe('bar')
+    expect(formatFunction('foobar')).toBe('barbar')
+    expect(formatFunction('barfoo')).toBe('barbar')
   })
 
   test('fast-1234 → https://linear.app/issue/fast-1234', () => {
@@ -18,16 +18,18 @@ describe('createFormatFn', () => {
       pattern: '/fast-(\\d+)/g',
       replacement: 'https://linear.app/issue/fast-$1',
     }
-    const formatFn = createFormatFn(format)
-    expect(formatFn('fast-1234')).toBe('https://linear.app/issue/fast-1234')
-    expect(formatFn('fast-1234 fast-5678')).toBe(
+    const formatFunction = createFormatFn(format)
+    expect(formatFunction('fast-1234')).toBe(
+      'https://linear.app/issue/fast-1234',
+    )
+    expect(formatFunction('fast-1234 fast-5678')).toBe(
       'https://linear.app/issue/fast-1234 https://linear.app/issue/fast-5678',
     )
   })
 })
 
 test('applyFormatFnList', () => {
-  const formatFnList = [
+  const formatFunctionList = [
     createFormatFn({
       pattern: '/one/g',
       replacement: 'two',
@@ -37,7 +39,7 @@ test('applyFormatFnList', () => {
       replacement: 'three',
     }),
   ]
-  expect(applyFormatFnList('one', formatFnList)).toBe('three')
-  expect(applyFormatFnList('two', formatFnList)).toBe('three')
-  expect(applyFormatFnList('onetwo', formatFnList)).toBe('threethree')
+  expect(applyFormatFnList('one', formatFunctionList)).toBe('three')
+  expect(applyFormatFnList('two', formatFunctionList)).toBe('three')
+  expect(applyFormatFnList('onetwo', formatFunctionList)).toBe('threethree')
 })

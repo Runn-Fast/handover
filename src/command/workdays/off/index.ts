@@ -1,17 +1,17 @@
 import { CliCommand } from 'cilly'
 import { z } from 'zod'
-import type { CreateCmdFn } from '../../_utils/types.js'
+import type { CreateCmdFunction } from '../../_utils/types.js'
 import { createHelpHandler } from '../../_utils/create-help-handler.js'
 import { $DayOfWeek } from '../validators.js'
 import { updateUser } from '../../../db/update-user.js'
 import { getUser } from '../../../db/get-user.js'
 import { updateResponse } from '../response.js'
 
-const $WorkdaysOffCmdArgs = z.object({
+const $WorkdaysOffCmdArguments = z.object({
   days: z.array($DayOfWeek),
 })
 
-const createWorkdaysOffCmd: CreateCmdFn = (context) => {
+const createWorkdaysOffCmd: CreateCmdFunction = (context) => {
   const { web, userId } = context
 
   const workdaysOffCmd = new CliCommand('off')
@@ -21,8 +21,9 @@ const createWorkdaysOffCmd: CreateCmdFn = (context) => {
       required: true,
       variadic: true,
     })
-    .withHandler(async (anyArgs) => {
-      const { days: workdaysToDrop } = $WorkdaysOffCmdArgs.parse(anyArgs)
+    .withHandler(async (anyArguments) => {
+      const { days: workdaysToDrop } =
+        $WorkdaysOffCmdArguments.parse(anyArguments)
 
       const user = await getUser({ userId })
       if (user instanceof Error) {

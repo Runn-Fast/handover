@@ -3,14 +3,14 @@ import { z } from 'zod'
 import { publishPrivateContentToSlack } from '../../publish-to-slack.js'
 import { updateUser, getUser } from '../../db/index.js'
 import { HANDOVER_DAILY_REMINDER_TIME } from '../../constants.js'
-import type { CreateCmdFn } from '../_utils/types.js'
+import type { CreateCmdFunction } from '../_utils/types.js'
 import { createHelpHandler } from '../_utils/create-help-handler.js'
 
 const $RemindCmdOptions = z.object({
   at: z.string().optional(),
 })
 
-const createRemindCmd: CreateCmdFn = (context) => {
+const createRemindCmd: CreateCmdFunction = (context) => {
   const { web, userId } = context
 
   const remindCmd = new CliCommand('remind')
@@ -21,7 +21,7 @@ const createRemindCmd: CreateCmdFn = (context) => {
       name: ['-t', '--at'],
       args: [{ name: 'time' }],
     })
-    .withHandler(async (_args, anyOptions) => {
+    .withHandler(async (_arguments, anyOptions) => {
       const { at: dailyReminderTime } = $RemindCmdOptions.parse(anyOptions)
 
       if (typeof dailyReminderTime === 'string') {

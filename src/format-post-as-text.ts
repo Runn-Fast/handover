@@ -1,5 +1,5 @@
 import type { PostWithItems } from './db/index.js'
-import type { FormatFn } from './types.js'
+import type { FormatFunction } from './types.js'
 import { applyFormatFnList } from './format.js'
 
 const lineStartsWithBullet = (line: string): boolean => {
@@ -18,11 +18,11 @@ const lineStartsWithBullet = (line: string): boolean => {
 
 type FormatPostAsTextOptions = {
   post: PostWithItems
-  formatFnList?: FormatFn[]
+  formatFnList?: FormatFunction[]
 }
 
 const formatPostAsText = (options: FormatPostAsTextOptions): string => {
-  const { post, formatFnList = [] } = options
+  const { post, formatFnList: formatFunctionList = [] } = options
   const { title, items } = post
 
   const lines = items.flatMap((item) =>
@@ -32,7 +32,7 @@ const formatPostAsText = (options: FormatPostAsTextOptions): string => {
       .split('\n')
       .filter((line) => line.length > 0)
       .map((line) => {
-        return applyFormatFnList(line, formatFnList)
+        return applyFormatFnList(line, formatFunctionList)
       }),
   )
 
