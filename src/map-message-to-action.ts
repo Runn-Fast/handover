@@ -1,5 +1,6 @@
 import * as z from 'zod'
 import type { Action } from './types.js'
+import { unescapeSlackText } from './unescape-slack-text.js'
 
 const messageAddedSchema = z.object({
   subtype: z.optional(z.string()),
@@ -37,7 +38,7 @@ const mapMessageToAction = (message: unknown): Action | Error => {
       userId: messageChanged.data.message.user,
       channel: messageChanged.data.channel,
       ts: messageChanged.data.message.ts,
-      text: messageChanged.data.message?.text,
+      text: unescapeSlackText(messageChanged.data.message.text),
     }
   }
 
@@ -48,7 +49,7 @@ const mapMessageToAction = (message: unknown): Action | Error => {
       userId: messageDeleted.data.previous_message.user,
       channel: messageDeleted.data.channel,
       ts: messageDeleted.data.previous_message.ts,
-      text: messageDeleted.data.previous_message.text,
+      text: unescapeSlackText(messageDeleted.data.previous_message.text),
     }
   }
 
@@ -66,7 +67,7 @@ const mapMessageToAction = (message: unknown): Action | Error => {
       userId: messageAdded.data.user,
       channel: messageAdded.data.channel,
       ts: messageAdded.data.ts,
-      text: messageAdded.data.text,
+      text: unescapeSlackText(messageAdded.data.text),
     }
   }
 
