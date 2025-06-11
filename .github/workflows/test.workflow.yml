@@ -30,15 +30,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    env:
-      DATABASE_URL: postgres://postgres:password@localhost:5432/postgres
-      PORT: 9621
-      SLACK_APP_TOKEN: XXXX-X-XXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-      SLACK_BOT_TOKEN: XXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
-      SLACK_SIGNING_SECRET: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-      HANDOVER_CHANNEL: XXXXXXXXXXX
-      HANDOVER_TITLE: Dev Handover
-      OPENAI_API_KEY: XX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -84,21 +76,18 @@ jobs:
       - name: Create test env file
         run: |
           cat > .env.test << EOF
-          PORT=${{ env.PORT }}
-          SLACK_APP_TOKEN=${{ env.SLACK_APP_TOKEN }}
-          SLACK_BOT_TOKEN=${{ env.SLACK_BOT_TOKEN }}
-          SLACK_SIGNING_SECRET=${{ env.SLACK_SIGNING_SECRET }}
-          HANDOVER_CHANNEL=${{ env.HANDOVER_CHANNEL }}
-          HANDOVER_TITLE=${{ env.HANDOVER_TITLE }}
+          PORT=9621
+          SLACK_APP_TOKEN=xxx
+          SLACK_BOT_TOKEN=xxx
+          SLACK_SIGNING_SECRET=xxx
+          HANDOVER_CHANNEL=C000
+          HANDOVER_TITLE=Dev Handover
           DATABASE_URL=postgresql://postgres:password@localhost:5432/runn_handover_test?schema=public
-          OPENAI_API_KEY=${{ env.OPENAI_API_KEY }}
+          OPENAI_API_KEY=sk-xxx
           EOF
 
       - name: Setup test database
         run: pnpm run prisma:test db push
-
-      - name: Migrate Database
-        run: pnpm run prisma db push
 
       - name: Tests
         run: pnpm run test
