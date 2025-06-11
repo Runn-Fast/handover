@@ -14,11 +14,11 @@ concurrency:
 jobs:
   main:
     name: Handover Bot
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
       postgres:
-        image: cimg/postgres:14.2
+        image: postgres:17-alpine
         env:
           POSTGRES_PASSWORD: password
           POSTGRES_DB: postgres
@@ -30,29 +30,21 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    env:
-      DATABASE_URL: postgres://postgres:password@localhost:5432/postgres
-      PORT: 9621
-      SLACK_APP_TOKEN: XXXX-X-XXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-      SLACK_BOT_TOKEN: XXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXX
-      SLACK_SIGNING_SECRET: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-      HANDOVER_CHANNEL: XXXXXXXXXXX
-      HANDOVER_TITLE: Dev Handover
-      OPENAI_API_KEY: XX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v4
         name: Install pnpm
         id: pnpm-install
         with:
-          version: 8
+          version: 9
           run_install: false
 
       - name: Get pnpm store directory
@@ -61,7 +53,7 @@ jobs:
         run: |
           echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Setup pnpm cache
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
@@ -73,16 +65,29 @@ jobs:
         run: pnpm install
 
       - name: Generate DB Types
-        run: pnpm exec prisma generate
+        run: pnpm run prisma generate
 
       - name: Check Code Formatting
-        run: pnpm exec xo
+        run: pnpm run tidy:check
 
       - name: Typescript
-        run: pnpm exec tsc
+        run: pnpm run build
 
-      - name: Migrate Database
-        run: pnpm exec prisma db push
+      - name: Create test env file
+        run: |
+          cat > .env.test << EOF
+          PORT=9621
+          SLACK_APP_TOKEN=xxx
+          SLACK_BOT_TOKEN=xxx
+          SLACK_SIGNING_SECRET=xxx
+          HANDOVER_CHANNEL=C000
+          HANDOVER_TITLE=Dev Handover
+          DATABASE_URL=postgresql://postgres:password@localhost:5432/runn_handover_test?schema=public
+          OPENAI_API_KEY=sk-xxx
+          EOF
+
+      - name: Setup test database
+        run: pnpm run prisma:test db push
 
       - name: Tests
-        run: pnpm exec vitest --watch=false
+        run: pnpm run test

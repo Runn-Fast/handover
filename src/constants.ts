@@ -20,11 +20,11 @@ const schema = z.object({
 
 const config = schema.parse(process.env)
 
-export const SLACK_APP_TOKEN = config.SLACK_APP_TOKEN
-export const SLACK_BOT_TOKEN = config.SLACK_BOT_TOKEN
-export const SLACK_SIGNING_SECRET = config.SLACK_SIGNING_SECRET
-export const PORT = config.PORT
-export const HANDOVER_CHANNEL = config.HANDOVER_CHANNEL
-export const HANDOVER_TITLE = config.HANDOVER_TITLE
-export const HANDOVER_DAILY_REMINDER_TIME = config.HANDOVER_DAILY_REMINDER_TIME
-export const OPENAI_API_KEY = config.OPENAI_API_KEY
+export const { SLACK_APP_TOKEN } = config
+export const { SLACK_BOT_TOKEN } = config
+export const { SLACK_SIGNING_SECRET } = config
+export const { PORT } = config
+export const { HANDOVER_CHANNEL } = config
+export const { HANDOVER_TITLE } = config
+export const { HANDOVER_DAILY_REMINDER_TIME } = config
+export const { OPENAI_API_KEY } = config
