@@ -15,7 +15,7 @@ describe('createFormatFn', () => {
 
   test('fast-1234 → https://linear.app/issue/fast-1234', () => {
     const format = {
-      pattern: '/fast-(\\d+)/g',
+      pattern: String.raw`/fast-(\d+)/g`,
       replacement: 'https://linear.app/issue/fast-$1',
     }
     const formatFunction = createFormatFn(format)
