@@ -81,6 +81,22 @@ jobs:
       - name: Typescript
         run: pnpm run build
 
+      - name: Create test env file
+        run: |
+          cat > .env.test << EOF
+          PORT=${{ env.PORT }}
+          SLACK_APP_TOKEN=${{ env.SLACK_APP_TOKEN }}
+          SLACK_BOT_TOKEN=${{ env.SLACK_BOT_TOKEN }}
+          SLACK_SIGNING_SECRET=${{ env.SLACK_SIGNING_SECRET }}
+          HANDOVER_CHANNEL=${{ env.HANDOVER_CHANNEL }}
+          HANDOVER_TITLE=${{ env.HANDOVER_TITLE }}
+          DATABASE_URL=postgresql://postgres:password@localhost:5432/runn_handover_test?schema=public
+          OPENAI_API_KEY=${{ env.OPENAI_API_KEY }}
+          EOF
+
+      - name: Setup test database
+        run: pnpm run prisma:test db push
+
       - name: Migrate Database
         run: pnpm run prisma db push
 
