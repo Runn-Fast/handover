@@ -73,6 +73,20 @@ If you never set a time, the default of `17:00` is used. (`-t` is shorthand for
 Days are case-insensitive and accept `Monday` through `Sunday`. The `on`/`off`
 commands accept one or more days at a time.
 
+#### `conversation-style` — choose how reminder DMs sound
+
+Pick the tone the bot uses when it privately reminds you to post your handover.
+This setting is per user and only affects reminder DMs.
+
+| Command                               | Description                                   |
+| ------------------------------------- | --------------------------------------------- |
+| `@handover conversation-style`        | Show your current style and available styles  |
+| `@handover conversation-style basic`  | Use a simple reminder without calling the LLM |
+| `@handover conversation-style kiwi`   | Use casual Kiwi slang in reminder DMs         |
+
+Available styles are `standard`, `basic`, `humorous`, `british`, `kiwi`, and
+`unhinged`. Style names are case-insensitive.
+
 #### `history` — review past handovers
 
 Fetch a private copy of your previous handover posts.

@@ -10,14 +10,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ConversationStyle {
+  standard
+  basic
+  humorous
+  british
+  kiwi
+  unhinged
+}
+
 model User {
-  id                String   @id
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                String            @id
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   name              String
   timeZone          String
   dailyReminderTime String?
-  workdays          Int[]    @default([1, 2, 3, 4, 5])
+  workdays          Int[]             @default([1, 2, 3, 4, 5])
+  conversationStyle ConversationStyle @default(standard)
 
   posts    Post[]
   Reminder Reminder[]

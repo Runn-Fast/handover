@@ -36,6 +36,7 @@ const sendReminderToUser = async (
   let reminderText = await generateReminder({
     name: user.name,
     daysSinceLastPost,
+    conversationStyle: user.conversationStyle,
   })
 
   if (daysSinceLastPost >= daysSinceLastPostCutOff) {
