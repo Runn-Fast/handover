@@ -1,9 +1,8 @@
-import OpenAI from 'openai'
 import { OPENAI_API_KEY } from './constants.js'
-
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-})
+import {
+  defaultConversationStyle,
+  type ConversationStyle,
+} from './conversation-style.js'
 
 const pick = (array: string[]): string => {
   if (array.length === 0) {
@@ -16,12 +15,102 @@ const pick = (array: string[]): string => {
 type GenerateReminderOptions = {
   name: string
   daysSinceLastPost: number
+  conversationStyle?: ConversationStyle
 }
 
-const generateReminder = async (
-  options: GenerateReminderOptions,
-): Promise<string> => {
-  const { name, daysSinceLastPost } = options
+type ReminderMessage = {
+  role: 'system' | 'user'
+  content: string
+}
+
+type ReminderCompletionRequest = {
+  model: string
+  messages: ReminderMessage[]
+}
+
+type ReminderCompletionResponse = {
+  choices?: Array<{
+    message: {
+      content?: string
+    }
+  }>
+}
+
+type CreateReminderCompletion = (
+  request: ReminderCompletionRequest,
+) => Promise<ReminderCompletionResponse>
+
+type GenerateReminderDependencies = {
+  createReminderCompletion?: CreateReminderCompletion
+}
+
+type ReminderPrompt = {
+  systemPrompt: string
+  userPrompt: string
+}
+
+let openaiClient:
+  | {
+      chat: {
+        completions: {
+          create: CreateReminderCompletion
+        }
+      }
+    }
+  | undefined
+
+const createOpenAIReminderCompletion: CreateReminderCompletion = async (
+  request,
+) => {
+  const { default: OpenAI } = await import('openai')
+
+  openaiClient ??= new OpenAI({
+    apiKey: OPENAI_API_KEY,
+  }) as {
+    chat: {
+      completions: {
+        create: CreateReminderCompletion
+      }
+    }
+  }
+
+  return openaiClient.chat.completions.create(request)
+}
+
+const getConversationStyleInstruction = (
+  conversationStyle: ConversationStyle,
+): string | undefined => {
+  switch (conversationStyle) {
+    case 'standard': {
+      return undefined
+    }
+
+    case 'humorous': {
+      return 'Use light slapstick-style humor, as if the workday briefly tripped over its own shoelaces.'
+    }
+
+    case 'british': {
+      return 'Use an old-timey British colloquial tone, warm and quaint without being hard to understand.'
+    }
+
+    case 'kiwi': {
+      return 'Use casual New Zealand slang and phrasing, friendly and relaxed without overdoing it.'
+    }
+
+    case 'unhinged': {
+      return 'Use chaotic, absurd energy that feels completely bananas, while staying workplace-safe and kind.'
+    }
+
+    case 'basic': {
+      return undefined
+    }
+  }
+}
+
+const createReminderPrompt = (
+  options: Required<GenerateReminderOptions>,
+): ReminderPrompt => {
+  const { name, daysSinceLastPost, conversationStyle } = options
 
   const systemPrompt = `You are a helpful assistant.`
 
@@ -60,15 +149,43 @@ const generateReminder = async (
     'what they would like to share with the team',
   ])
 
-  const task =
+  let task =
     'Could you please write a very short message (2 sentences max) that I can ask them? Please be informal and casual, but also funny.'
 
-  const defaultPrompt = `Hey ${name}, what have you been working today?`
+  const styleInstruction = getConversationStyleInstruction(conversationStyle)
+  if (styleInstruction) {
+    task += ` ${styleInstruction}`
+  }
 
   const userPrompt = `${concern} ${relation}, ${name}, ${role}. ${action} ${question}. ${task}`
 
+  return {
+    systemPrompt,
+    userPrompt,
+  }
+}
+
+const generateReminder = async (
+  options: GenerateReminderOptions,
+  dependencies: GenerateReminderDependencies = {},
+): Promise<string> => {
+  const conversationStyle =
+    options.conversationStyle ?? defaultConversationStyle
+
+  const defaultPrompt = `Hey ${options.name}, what have you been working today?`
+  if (conversationStyle === 'basic') {
+    return 'What did you work on today?'
+  }
+
+  const { systemPrompt, userPrompt } = createReminderPrompt({
+    ...options,
+    conversationStyle,
+  })
+  const createReminderCompletion =
+    dependencies.createReminderCompletion ?? createOpenAIReminderCompletion
+
   try {
-    const response = await openai.chat.completions.create({
+    const response = await createReminderCompletion({
       model: 'gpt-3.5-turbo',
       messages: [
         {
@@ -98,4 +215,9 @@ const generateReminder = async (
   }
 }
 
-export { generateReminder }
+export {
+  createReminderPrompt,
+  generateReminder,
+  getConversationStyleInstruction,
+}
+export type { CreateReminderCompletion }
